@@ -52,7 +52,7 @@ export class BoardComponent {
     this.container.innerHTML = '';
 
     const gridEl = document.createElement('div');
-    gridEl.className = 'grid w-full aspect-square rounded-2xl overflow-hidden shadow-lg border-2 border-[var(--grid-line)] bg-[var(--cell-empty)]';
+    gridEl.className = 'board-grid';
     gridEl.style.display = 'grid';
     gridEl.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
     gridEl.style.gridTemplateRows = `repeat(${this.size}, 1fr)`;

@@ -50,7 +50,7 @@ class BorkdokuApp {
     appEl.innerHTML = '';
 
     const boardContainer = document.createElement('main');
-    boardContainer.className = 'w-full flex-1 flex flex-col items-center justify-center my-auto py-2';
+    boardContainer.className = 'board-wrapper';
     appEl.appendChild(boardContainer);
 
     // Inicializar HUD com suporte a Vidas e Controles
