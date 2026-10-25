@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" fill="#F4E8D8" stroke="#7A5230" stroke-width="4"/>
+  <!-- Orelhas -->
+  <ellipse cx="28" cy="35" rx="12" ry="18" fill="#C28448" transform="rotate(-15 28 35)"/>
+  <ellipse cx="72" cy="35" rx="12" ry="18" fill="#C28448" transform="rotate(15 72 35)"/>
+  <!-- Rosto -->
+  <ellipse cx="50" cy="54" rx="28" ry="24" fill="#E8C39E"/>
+  <!-- Olhos -->
+  <circle cx="40" cy="48" r="4" fill="#3D2612"/>
+  <circle cx="60" cy="48" r="4" fill="#3D2612"/>
+  <circle cx="41.5" cy="46.5" r="1.5" fill="#FFFFFF"/>
+  <circle cx="61.5" cy="46.5" r="1.5" fill="#FFFFFF"/>
+  <!-- Focinho -->
+  <ellipse cx="50" cy="58" rx="7" ry="5" fill="#3D2612"/>
+  <path d="M47 62 Q50 66 53 62" stroke="#3D2612" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Bochechas rosadas -->
+  <ellipse cx="32" cy="56" rx="4" ry="2.5" fill="#F4A69A" opacity="0.6"/>
+  <ellipse cx="68" cy="56" rx="4" ry="2.5" fill="#F4A69A" opacity="0.6"/>
+</svg>

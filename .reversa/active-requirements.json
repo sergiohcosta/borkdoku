@@ -1,0 +1,15 @@
+{
+  "schema-version": 1,
+  "feature-dir": "_reversa_forward/001-borkdoku-core-mvp",
+  "feature-id": "001",
+  "short-name": "borkdoku-core-mvp",
+  "started-at": "2026-10-25T12:19:20Z",
+  "current-stage": "done",
+  "stages-completed": [
+    "requirements",
+    "plan",
+    "to-do",
+    "coding"
+  ],
+  "paused-features": []
+}
