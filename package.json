@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --test --test-reporter=spec dist-test/**/*.test.js || node --import tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts"
   },
   "devDependencies": {
+    "@types/node": "^26.6.5",
     "tsx": "^4.23.15",
     "typescript": "^5.4.5",
     "vite": "^5.2.11"

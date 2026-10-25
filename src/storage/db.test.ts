@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GameStorage, type BackupData } from './db.js';
+import { GameStorage } from './db.js';
 
 // Polyfill localStorage in node test environment
 if (typeof localStorage === 'undefined') {

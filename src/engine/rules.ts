@@ -104,7 +104,7 @@ export function validateBoard(board: BoardState, regions: RegionMap): Validation
     if (!regMap.has(regId)) regMap.set(regId, []);
     regMap.get(regId)!.push(pos);
   }
-  for (const [regId, positions] of regMap.entries()) {
+  for (const [, positions] of regMap.entries()) {
     if (positions.length > 1) {
       conflicts.push({
         type: 'region',
