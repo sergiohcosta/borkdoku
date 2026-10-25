@@ -6,10 +6,9 @@ import {
   cellKey
 } from '../engine/rules.js';
 
-export type InputMode = 'toggle' | 'dog' | 'bone';
-
 export interface BoardOptions {
-  onCellClick: (coord: CellCoord) => void;
+  onCellSingleClick: (coord: CellCoord) => void;
+  onCellDoubleClick: (coord: CellCoord) => void;
 }
 
 export class BoardComponent {
@@ -18,11 +17,16 @@ export class BoardComponent {
   private regions: RegionMap = [];
   private board: BoardState = [];
   private validationResult: ValidationResult | null = null;
-  private onCellClick: (coord: CellCoord) => void;
+  private onCellSingleClick: (coord: CellCoord) => void;
+  private onCellDoubleClick: (coord: CellCoord) => void;
+
+  private clickTimer: number | null = null;
+  private lastClickedCoord: CellCoord | null = null;
 
   constructor(container: HTMLElement, options: BoardOptions) {
     this.container = container;
-    this.onCellClick = options.onCellClick;
+    this.onCellSingleClick = options.onCellSingleClick;
+    this.onCellDoubleClick = options.onCellDoubleClick;
   }
 
   update(board: BoardState, regions: RegionMap, validation: ValidationResult) {
@@ -31,6 +35,17 @@ export class BoardComponent {
     this.size = board.length;
     this.validationResult = validation;
     this.render();
+  }
+
+  flashErrorCell(coord: CellCoord) {
+    const key = `cell-${coord.row}-${coord.col}`;
+    const el = document.getElementById(key);
+    if (el) {
+      el.classList.add('cell-error');
+      setTimeout(() => {
+        el.classList.remove('cell-error');
+      }, 500);
+    }
   }
 
   render() {
@@ -45,6 +60,7 @@ export class BoardComponent {
     for (let r = 0; r < this.size; r++) {
       for (let c = 0; c < this.size; c++) {
         const cellEl = document.createElement('div');
+        cellEl.id = `cell-${r}-${c}`;
         const regId = this.regions[r][c];
         const state = this.board[r][c];
         const key = cellKey(r, c);
@@ -55,19 +71,15 @@ export class BoardComponent {
         cellEl.style.backgroundColor = `var(--reg-${regId % 9})`;
 
         // Bordas de região
-        // Superior
         if (r === 0 || this.regions[r - 1][c] !== regId) {
           cellEl.classList.add('border-t-region');
         }
-        // Inferior
         if (r === this.size - 1 || this.regions[r + 1][c] !== regId) {
           cellEl.classList.add('border-b-region');
         }
-        // Esquerda
         if (c === 0 || this.regions[r][c - 1] !== regId) {
           cellEl.classList.add('border-l-region');
         }
-        // Direita
         if (c === this.size - 1 || this.regions[r][c + 1] !== regId) {
           cellEl.classList.add('border-r-region');
         }
@@ -80,13 +92,39 @@ export class BoardComponent {
         if (state === 'dog') {
           cellEl.innerHTML = `<span class="cell-pop text-2xl select-none" role="img" aria-label="Cachorrinho">🐶</span>`;
         } else if (state === 'bone') {
-          cellEl.innerHTML = `<span class="text-xs opacity-60 select-none scale-75" role="img" aria-label="Ossinho">🦴</span>`;
+          cellEl.innerHTML = `<span class="text-xs opacity-70 select-none scale-90" role="img" aria-label="Ossinho">🦴</span>`;
         }
 
-        // Evento de clique / toque
+        // Evento de toque com detecção de clique simples vs duplo
         cellEl.addEventListener('pointerdown', (e) => {
           e.preventDefault();
-          this.onCellClick({ row: r, col: c });
+          const coord = { row: r, col: c };
+
+          if (this.clickTimer !== null && this.lastClickedCoord &&
+              this.lastClickedCoord.row === r && this.lastClickedCoord.col === c) {
+            // Duplo clique imediato
+            window.clearTimeout(this.clickTimer);
+            this.clickTimer = null;
+            this.lastClickedCoord = null;
+            this.onCellDoubleClick(coord);
+          } else {
+            // Primeiro clique: aguarda 220ms
+            if (this.clickTimer !== null) {
+              window.clearTimeout(this.clickTimer);
+              if (this.lastClickedCoord) {
+                this.onCellSingleClick(this.lastClickedCoord);
+              }
+            }
+            this.lastClickedCoord = coord;
+            this.clickTimer = window.setTimeout(() => {
+              this.clickTimer = null;
+              const target = this.lastClickedCoord;
+              this.lastClickedCoord = null;
+              if (target) {
+                this.onCellSingleClick(target);
+              }
+            }, 220);
+          }
         });
 
         gridEl.appendChild(cellEl);

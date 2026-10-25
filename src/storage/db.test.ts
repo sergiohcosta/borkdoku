@@ -59,3 +59,12 @@ test('Restauração rejeita arquivo corrompido ou com versão errada', () => {
   const res = storage.restoreBackup(invalidJson);
   assert.equal(res.success, false);
 });
+
+test('Persistência do nível atual do jogador', () => {
+  const storage = GameStorage.getInstance();
+  storage.clearAll();
+  assert.equal(storage.getCurrentLevelId(), 'level-1');
+
+  storage.setCurrentLevelId('level-4');
+  assert.equal(storage.getCurrentLevelId(), 'level-4');
+});

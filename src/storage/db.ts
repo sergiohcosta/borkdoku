@@ -33,6 +33,7 @@ const STORAGE_KEY_STATS = 'borkdoku_stats';
 const STORAGE_KEY_LEVELS = 'borkdoku_levels';
 const STORAGE_KEY_BREEDS = 'borkdoku_breeds';
 const STORAGE_KEY_SETTINGS = 'borkdoku_settings';
+const STORAGE_KEY_CURRENT_LEVEL = 'borkdoku_current_level';
 
 const DEFAULT_STATS: PlayerStats = {
   gamesPlayed: 0,
@@ -57,6 +58,23 @@ export class GameStorage {
       this.instance = new GameStorage();
     }
     return this.instance;
+  }
+
+  // --- LEVEL ATIVO ---
+  getCurrentLevelId(): string {
+    try {
+      return localStorage.getItem(STORAGE_KEY_CURRENT_LEVEL) || 'level-1';
+    } catch {
+      return 'level-1';
+    }
+  }
+
+  setCurrentLevelId(levelId: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEY_CURRENT_LEVEL, levelId);
+    } catch (e) {
+      console.warn('Erro ao salvar nível atual:', e);
+    }
   }
 
   // --- STATS ---
@@ -230,5 +248,6 @@ export class GameStorage {
     localStorage.removeItem(STORAGE_KEY_LEVELS);
     localStorage.removeItem(STORAGE_KEY_BREEDS);
     localStorage.removeItem(STORAGE_KEY_SETTINGS);
+    localStorage.removeItem(STORAGE_KEY_CURRENT_LEVEL);
   }
 }

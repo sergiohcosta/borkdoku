@@ -2,7 +2,7 @@ import { createEmptyBoard, validateBoard, type BoardState, type CellCoord } from
 import { CURATED_LEVELS, getNextLevel, type LevelDefinition } from './engine/levels.js';
 import { GameStorage } from './storage/db.js';
 import { SoundManager } from './audio/sound.js';
-import { BoardComponent, type InputMode } from './ui/board.js';
+import { BoardComponent } from './ui/board.js';
 import { HudComponent } from './ui/hud.js';
 import { SettingsModal } from './ui/settings.js';
 
@@ -15,16 +15,17 @@ class BorkdokuApp {
 
   private currentLevel: LevelDefinition;
   private board: BoardState;
-  private currentMode: InputMode = 'toggle';
+  private lives: number = 3;
+  private directPlacementMode: 'normal' | 'dog' | 'bone' = 'normal';
 
   constructor() {
     this.storage = GameStorage.getInstance();
     this.sound = SoundManager.getInstance();
 
-    // Iniciar na primeira fase ou na fase seguinte às já concluídas
-    const completed = this.storage.getCompletedLevels();
-    const lastLevelId = completed.length > 0 ? completed[completed.length - 1].levelId : 'level-1';
-    this.currentLevel = CURATED_LEVELS.find(l => l.id === lastLevelId) || CURATED_LEVELS[0];
+    // Recupera o nível exato onde o jogador parou (persistência entre refreshes)
+    const savedLevelId = this.storage.getCurrentLevelId();
+    const found = CURATED_LEVELS.find(l => l.id === savedLevelId);
+    this.currentLevel = found || CURATED_LEVELS[0];
 
     this.board = createEmptyBoard(this.currentLevel.size);
 
@@ -52,16 +53,14 @@ class BorkdokuApp {
     boardContainer.className = 'w-full flex-1 flex flex-col items-center justify-center my-auto py-2';
     appEl.appendChild(boardContainer);
 
-    // Inicializar HUD
+    // Inicializar HUD com suporte a Vidas e Controles
     this.hud = new HudComponent(appEl, {
       onToggleSound: () => {
         const isMuted = this.sound.toggleMute();
-        this.hud.renderHeader(this.currentLevel, isMuted);
+        this.hud.renderHeader(this.currentLevel, isMuted, this.lives);
       },
       onReset: () => {
-        this.board = createEmptyBoard(this.currentLevel.size);
-        this.updateBoardAndValidate();
-        this.sound.playRemove();
+        this.resetLevel();
       },
       onOpenSettings: () => {
         this.settingsModal.show();
@@ -70,15 +69,20 @@ class BorkdokuApp {
         const next = getNextLevel(this.currentLevel.id);
         this.startLevel(next);
       },
-      onSelectMode: (mode) => {
-        this.currentMode = mode;
-        this.hud.renderBottomControls(this.currentMode);
+      onSelectDogMode: () => {
+        this.directPlacementMode = this.directPlacementMode === 'dog' ? 'normal' : 'dog';
+        this.showModeToast(this.directPlacementMode === 'dog' ? 'Modo Cão Ativo (toque para colocar)' : 'Modo Padrão');
+      },
+      onSelectBoneMode: () => {
+        this.directPlacementMode = this.directPlacementMode === 'bone' ? 'normal' : 'bone';
+        this.showModeToast(this.directPlacementMode === 'bone' ? 'Modo Ossinho Ativo (toque para marcar)' : 'Modo Padrão');
       }
     });
 
-    // Inicializar Componente de Tabuleiro
+    // Inicializar Tabuleiro com clique simples e clique duplo
     this.boardComponent = new BoardComponent(boardContainer, {
-      onCellClick: (coord) => this.handleCellClick(coord)
+      onCellSingleClick: (coord) => this.handleCellSingleClick(coord),
+      onCellDoubleClick: (coord) => this.handleCellDoubleClick(coord)
     });
 
     // Inicializar Modal de Ajustes
@@ -86,64 +90,119 @@ class BorkdokuApp {
       onThemeChanged: () => this.applyTheme(),
       onDataRestored: () => {
         this.applyTheme();
-        this.startLevel(this.currentLevel);
+        const restoredId = this.storage.getCurrentLevelId();
+        const lvl = CURATED_LEVELS.find(l => l.id === restoredId) || CURATED_LEVELS[0];
+        this.startLevel(lvl);
       }
     });
 
-    this.hud.renderBottomControls(this.currentMode);
+    this.hud.renderBottomControls();
+  }
+
+  private showModeToast(message: string) {
+    const oldToast = document.getElementById('mode-toast');
+    if (oldToast) oldToast.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'mode-toast';
+    toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[var(--text-main)] text-[var(--bg-surface)] text-xs font-bold shadow-lg z-40 animate-fade-in pointer-events-none';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1200);
   }
 
   startLevel(level: LevelDefinition) {
     this.currentLevel = level;
+    this.storage.setCurrentLevelId(level.id); // Salva imediatamente no localStorage
+    this.lives = 3; // Inicia com 3 vidas
     this.board = createEmptyBoard(level.size);
-    this.hud.renderHeader(this.currentLevel, this.sound.getMuted());
+
+    this.hud.renderHeader(this.currentLevel, this.sound.getMuted(), this.lives);
     this.hud.startTimer();
     this.updateBoardAndValidate();
   }
 
-  handleCellClick(coord: CellCoord) {
-    const current = this.board[coord.row][coord.col];
+  resetLevel() {
+    this.lives = 3;
+    this.board = createEmptyBoard(this.currentLevel.size);
+    this.hud.setLives(this.lives);
+    this.hud.startTimer();
+    this.updateBoardAndValidate();
+    this.sound.playRemove();
+  }
 
-    if (this.currentMode === 'toggle') {
-      if (current === 'empty') {
-        this.board[coord.row][coord.col] = 'bone';
-        this.sound.playBone();
-      } else if (current === 'bone') {
-        this.board[coord.row][coord.col] = 'dog';
-        this.sound.playDog();
-      } else {
-        this.board[coord.row][coord.col] = 'empty';
-        this.sound.playRemove();
-      }
-    } else if (this.currentMode === 'dog') {
-      if (current === 'dog') {
-        this.board[coord.row][coord.col] = 'empty';
-        this.sound.playRemove();
-      } else {
-        this.board[coord.row][coord.col] = 'dog';
-        this.sound.playDog();
-      }
-    } else if (this.currentMode === 'bone') {
-      if (current === 'bone') {
-        this.board[coord.row][coord.col] = 'empty';
-        this.sound.playRemove();
-      } else {
-        this.board[coord.row][coord.col] = 'bone';
-        this.sound.playBone();
-      }
+  // 1 Clique: Coloca ou remove ossinho de apoio (ou remove cão existente)
+  handleCellSingleClick(coord: CellCoord) {
+    if (this.lives <= 0) return;
+
+    if (this.directPlacementMode === 'dog') {
+      this.attemptPlaceDog(coord);
+      return;
     }
 
+    const current = this.board[coord.row][coord.col];
+    if (current === 'empty') {
+      this.board[coord.row][coord.col] = 'bone';
+      this.sound.playBone();
+    } else if (current === 'bone') {
+      this.board[coord.row][coord.col] = 'empty';
+      this.sound.playRemove();
+    } else if (current === 'dog') {
+      this.board[coord.row][coord.col] = 'empty';
+      this.sound.playRemove();
+    }
+
+    this.updateBoardAndValidate();
+  }
+
+  // 2 Cliques: Coloca cachorrinho (ou remove se já houver cão)
+  handleCellDoubleClick(coord: CellCoord) {
+    if (this.lives <= 0) return;
+
+    const current = this.board[coord.row][coord.col];
+    if (current === 'dog') {
+      this.board[coord.row][coord.col] = 'empty';
+      this.sound.playRemove();
+      this.updateBoardAndValidate();
+      return;
+    }
+
+    this.attemptPlaceDog(coord);
+  }
+
+  // Tentativa de posicionamento com validação estrita e sistema de 3 vidas
+  private attemptPlaceDog(coord: CellCoord) {
+    // Verifica se esta coordenada é a solução correta para esta linha
+    const isCorrect = this.currentLevel.solution[coord.row] === coord.col;
+
+    // Se estiver errado: perde 1 vida!
+    if (!isCorrect) {
+      this.lives = Math.max(0, this.lives - 1);
+      this.hud.setLives(this.lives);
+      this.sound.playConflict();
+      this.boardComponent.flashErrorCell(coord);
+
+      // Se perdeu todas as vidas: Game Over!
+      if (this.lives <= 0) {
+        this.hud.stopTimer();
+        setTimeout(() => {
+          this.hud.showGameOverModal(() => {
+            this.resetLevel();
+          });
+        }, 300);
+      }
+      return;
+    }
+
+    // Se estiver correto: posiciona o cachorrinho com sucesso!
+    this.board[coord.row][coord.col] = 'dog';
+    this.sound.playDog();
     this.updateBoardAndValidate();
   }
 
   updateBoardAndValidate() {
     const val = validateBoard(this.board, this.currentLevel.regions);
     this.boardComponent.update(this.board, this.currentLevel.regions, val);
-
-    if (val.conflicts.length > 0) {
-      // Alerta sonoro suave apenas na primeira colisão
-      this.sound.playConflict();
-    }
 
     if (val.isSolved) {
       const timeSpent = this.hud.stopTimer();
@@ -157,7 +216,7 @@ class BorkdokuApp {
         this.currentLevel.breed
       );
 
-      // Exibir modal de comemoração
+      // Exibir modal de vitória limpo
       setTimeout(() => {
         this.hud.showVictoryModal(this.currentLevel, timeSpent);
       }, 400);
@@ -167,7 +226,7 @@ class BorkdokuApp {
   private registerServiceWorker() {
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
           console.log('ServiceWorker registration optional:', err);
         });
       });
