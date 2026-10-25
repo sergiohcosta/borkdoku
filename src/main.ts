@@ -1,5 +1,5 @@
-import { createEmptyBoard, validateBoard, type BoardState, type CellCoord } from './engine/rules.js';
-import { CURATED_LEVELS, getNextLevel, type LevelDefinition } from './engine/levels.js';
+import { createEmptyBoard, validateBoard, cellKey, type BoardState, type CellCoord } from './engine/rules.js';
+import { getLevelById, getNextLevel, type LevelDefinition } from './engine/levels.js';
 import { GameStorage } from './storage/db.js';
 import { SoundManager } from './audio/sound.js';
 import { BoardComponent } from './ui/board.js';
@@ -17,15 +17,15 @@ class BorkdokuApp {
   private board: BoardState;
   private lives: number = 3;
   private directPlacementMode: 'normal' | 'dog' | 'bone' = 'normal';
+  private lockedCells: Set<string> = new Set<string>();
 
   constructor() {
     this.storage = GameStorage.getInstance();
     this.sound = SoundManager.getInstance();
 
-    // Recupera o nível exato onde o jogador parou (persistência entre refreshes)
+    // Recupera o nível exato onde o jogador parou (persistência progressiva até 500+)
     const savedLevelId = this.storage.getCurrentLevelId();
-    const found = CURATED_LEVELS.find(l => l.id === savedLevelId);
-    this.currentLevel = found || CURATED_LEVELS[0];
+    this.currentLevel = getLevelById(savedLevelId);
 
     this.board = createEmptyBoard(this.currentLevel.size);
 
@@ -91,7 +91,11 @@ class BorkdokuApp {
       onDataRestored: () => {
         this.applyTheme();
         const restoredId = this.storage.getCurrentLevelId();
-        const lvl = CURATED_LEVELS.find(l => l.id === restoredId) || CURATED_LEVELS[0];
+        const lvl = getLevelById(restoredId);
+        this.startLevel(lvl);
+      },
+      onLevelSelected: (levelId) => {
+        const lvl = getLevelById(levelId);
         this.startLevel(lvl);
       }
     });
@@ -115,6 +119,7 @@ class BorkdokuApp {
     this.currentLevel = level;
     this.storage.setCurrentLevelId(level.id); // Salva imediatamente no localStorage
     this.lives = 3; // Inicia com 3 vidas
+    this.lockedCells.clear(); // Limpa as travas
     this.board = createEmptyBoard(level.size);
 
     this.hud.renderHeader(this.currentLevel, this.sound.getMuted(), this.lives);
@@ -124,6 +129,7 @@ class BorkdokuApp {
 
   resetLevel() {
     this.lives = 3;
+    this.lockedCells.clear();
     this.board = createEmptyBoard(this.currentLevel.size);
     this.hud.setLives(this.lives);
     this.hud.startTimer();
@@ -134,6 +140,9 @@ class BorkdokuApp {
   // 1 Clique: Coloca ou remove ossinho de apoio (ou remove cão existente)
   handleCellSingleClick(coord: CellCoord) {
     if (this.lives <= 0) return;
+
+    const key = cellKey(coord.row, coord.col);
+    if (this.lockedCells.has(key)) return; // Casa travada não aceita cliques
 
     if (this.directPlacementMode === 'dog') {
       this.attemptPlaceDog(coord);
@@ -159,6 +168,9 @@ class BorkdokuApp {
   handleCellDoubleClick(coord: CellCoord) {
     if (this.lives <= 0) return;
 
+    const key = cellKey(coord.row, coord.col);
+    if (this.lockedCells.has(key)) return; // Casa travada não aceita cliques
+
     const current = this.board[coord.row][coord.col];
     if (current === 'dog') {
       this.board[coord.row][coord.col] = 'empty';
@@ -170,16 +182,24 @@ class BorkdokuApp {
     this.attemptPlaceDog(coord);
   }
 
-  // Tentativa de posicionamento com validação estrita e sistema de 3 vidas
+  // Tentativa de posicionamento com validação estrita, sistema de 3 vidas e trava de ossinho
   private attemptPlaceDog(coord: CellCoord) {
+    const key = cellKey(coord.row, coord.col);
+    if (this.lockedCells.has(key)) return;
+
     // Verifica se esta coordenada é a solução correta para esta linha
     const isCorrect = this.currentLevel.solution[coord.row] === coord.col;
 
-    // Se estiver errado: perde 1 vida!
+    // Se estiver errado: perde 1 vida e trava a casa como ossinho!
     if (!isCorrect) {
       this.lives = Math.max(0, this.lives - 1);
       this.hud.setLives(this.lives);
       this.sound.playConflict();
+
+      // Marca imediatamente a casa como ossinho e trava para não deixar clicar de novo
+      this.board[coord.row][coord.col] = 'bone';
+      this.lockedCells.add(key);
+      this.updateBoardAndValidate();
       this.boardComponent.flashErrorCell(coord);
 
       // Se perdeu todas as vidas: Game Over!
@@ -202,7 +222,7 @@ class BorkdokuApp {
 
   updateBoardAndValidate() {
     const val = validateBoard(this.board, this.currentLevel.regions);
-    this.boardComponent.update(this.board, this.currentLevel.regions, val);
+    this.boardComponent.update(this.board, this.currentLevel.regions, val, this.lockedCells);
 
     if (val.isSolved) {
       const timeSpent = this.hud.stopTimer();

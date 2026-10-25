@@ -3,6 +3,7 @@ import { GameStorage } from '../storage/db.js';
 export interface SettingsCallbacks {
   onThemeChanged: (theme: 'light' | 'dark') => void;
   onDataRestored: () => void;
+  onLevelSelected?: (levelId: string) => void;
 }
 
 export class SettingsModal {
@@ -17,6 +18,8 @@ export class SettingsModal {
     const stats = storage.getStats();
     const settings = storage.getSettings();
     const breeds = storage.getUnlockedBreeds();
+    const currentLevelId = storage.getCurrentLevelId();
+    const currentNum = parseInt(currentLevelId.replace('level-', ''), 10) || 1;
 
     const modal = document.createElement('div');
     modal.id = 'settings-modal';
@@ -30,7 +33,25 @@ export class SettingsModal {
             <span class="text-2xl">⚙️</span>
             <h2 class="text-xl font-bold m-0">Ajustes & Estatísticas</h2>
           </div>
-          <button id="btn-close-settings" class="text-xl p-1 rounded-lg hover:bg-[var(--bg-card)]">✕</button>
+          <button id="btn-close-settings" class="text-xl p-1 rounded-lg hover:bg-[var(--bg-card)] cursor-pointer">✕</button>
+        </div>
+
+        <!-- Seletor / Pular Nível (até 500+) -->
+        <div class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-[var(--text-main)] m-0">Nível do Jogo</h3>
+              <p class="text-xs text-[var(--text-muted)] m-0 mt-0.5">Avance ou pule para qualquer nível (1 a 500+)</p>
+            </div>
+            <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)]">Nível ${currentNum}</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="number" id="input-jump-level" min="1" max="1000" value="${currentNum}" class="flex-1 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-sm font-bold text-[var(--text-main)] outline-none" />
+            <button id="btn-jump-level" class="py-2 px-3.5 rounded-xl bg-[var(--accent-gold)] text-white text-xs font-extrabold shadow-sm active:scale-95 transition-all cursor-pointer">
+              Ir para Nível 🐾
+            </button>
+          </div>
         </div>
 
         <!-- Estatísticas -->
@@ -66,7 +87,7 @@ export class SettingsModal {
             <span class="text-lg">${settings.theme === 'dark' ? '🌙' : '☀️'}</span>
             <span class="text-sm font-semibold">Modo Noturno (Aconchegante)</span>
           </div>
-          <button id="btn-toggle-theme" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm">
+          <button id="btn-toggle-theme" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm cursor-pointer">
             ${settings.theme === 'dark' ? 'Ativado' : 'Desativado'}
           </button>
         </div>
@@ -79,11 +100,11 @@ export class SettingsModal {
           </div>
 
           <div class="flex gap-2">
-            <button id="btn-export-backup" class="flex-1 py-2 px-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-bold shadow-sm hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+            <button id="btn-export-backup" class="flex-1 py-2 px-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-bold shadow-sm hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
               <span>📥</span>
               <span>Exportar Backup</span>
             </button>
-            <button id="btn-import-backup" class="flex-1 py-2 px-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-bold shadow-sm hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+            <button id="btn-import-backup" class="flex-1 py-2 px-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-bold shadow-sm hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
               <span>📤</span>
               <span>Restaurar Backup</span>
             </button>
@@ -102,6 +123,19 @@ export class SettingsModal {
 
     // Eventos
     document.getElementById('btn-close-settings')?.addEventListener('click', () => modal.remove());
+
+    document.getElementById('btn-jump-level')?.addEventListener('click', () => {
+      const input = document.getElementById('input-jump-level') as HTMLInputElement | null;
+      if (input && input.value) {
+        const val = parseInt(input.value, 10);
+        if (!isNaN(val) && val >= 1 && val <= 1000) {
+          const targetId = `level-${val}`;
+          storage.setCurrentLevelId(targetId);
+          modal.remove();
+          this.callbacks.onLevelSelected?.(targetId);
+        }
+      }
+    });
 
     document.getElementById('btn-toggle-theme')?.addEventListener('click', () => {
       const current = storage.getSettings().theme;

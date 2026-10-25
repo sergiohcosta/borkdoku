@@ -17,6 +17,7 @@ export class BoardComponent {
   private regions: RegionMap = [];
   private board: BoardState = [];
   private validationResult: ValidationResult | null = null;
+  private lockedCells: Set<string> = new Set();
   private onCellSingleClick: (coord: CellCoord) => void;
   private onCellDoubleClick: (coord: CellCoord) => void;
 
@@ -29,11 +30,12 @@ export class BoardComponent {
     this.onCellDoubleClick = options.onCellDoubleClick;
   }
 
-  update(board: BoardState, regions: RegionMap, validation: ValidationResult) {
+  update(board: BoardState, regions: RegionMap, validation: ValidationResult, lockedCells: Set<string> = new Set()) {
     this.board = board;
     this.regions = regions;
     this.size = board.length;
     this.validationResult = validation;
+    this.lockedCells = lockedCells;
     this.render();
   }
 
@@ -64,11 +66,15 @@ export class BoardComponent {
         const regId = this.regions[r][c];
         const state = this.board[r][c];
         const key = cellKey(r, c);
+        const isLocked = this.lockedCells.has(key);
         const isConflict = this.validationResult?.conflictingCells.has(key) ?? false;
 
         // Classe base
         cellEl.className = 'cell';
         cellEl.style.backgroundColor = `var(--reg-${regId % 9})`;
+        if (isLocked) {
+          cellEl.classList.add('cell-locked');
+        }
 
         // Bordas de região
         if (r === 0 || this.regions[r - 1][c] !== regId) {
@@ -89,7 +95,9 @@ export class BoardComponent {
         }
 
         // Conteúdo da célula
-        if (state === 'dog') {
+        if (isLocked) {
+          cellEl.innerHTML = `<span class="text-xs opacity-60 select-none scale-90" role="img" aria-label="Ossinho bloqueado">🦴</span>`;
+        } else if (state === 'dog') {
           cellEl.innerHTML = `<span class="cell-pop text-2xl select-none" role="img" aria-label="Cachorrinho">🐶</span>`;
         } else if (state === 'bone') {
           cellEl.innerHTML = `<span class="text-xs opacity-70 select-none scale-90" role="img" aria-label="Ossinho">🦴</span>`;
@@ -98,6 +106,7 @@ export class BoardComponent {
         // Evento de toque com detecção de clique simples vs duplo
         cellEl.addEventListener('pointerdown', (e) => {
           e.preventDefault();
+          if (isLocked) return; // Não permite clicar em casa já travada!
           const coord = { row: r, col: c };
 
           if (this.clickTimer !== null && this.lastClickedCoord &&

@@ -120,6 +120,15 @@ body {
   transform: scale(0.92);
 }
 
+.cell-locked {
+  cursor: not-allowed !important;
+  opacity: 0.8;
+}
+
+.cell-locked:active {
+  transform: none !important;
+}
+
 .cell-error {
   animation: gentle-shake 0.3s ease-in-out;
   box-shadow: inset 0 0 0 3px var(--accent-red) !important;
