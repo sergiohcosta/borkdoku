@@ -9,6 +9,7 @@ import {
 export interface BoardOptions {
   onCellSingleClick: (coord: CellCoord) => void;
   onCellDoubleClick: (coord: CellCoord) => void;
+  onCellDragPlaceBone: (coord: CellCoord) => void;
 }
 
 export class BoardComponent {
@@ -20,14 +21,30 @@ export class BoardComponent {
   private lockedCells: Set<string> = new Set();
   private onCellSingleClick: (coord: CellCoord) => void;
   private onCellDoubleClick: (coord: CellCoord) => void;
+  private onCellDragPlaceBone: (coord: CellCoord) => void;
 
+  // Gerenciamento de clique simples vs duplo
   private clickTimer: number | null = null;
   private lastClickedCoord: CellCoord | null = null;
+
+  // Gerenciamento de arrasto contínuo (drag-to-bone)
+  private isPointerDown: boolean = false;
+  private hasDragged: boolean = false;
+  private dragStartCoord: CellCoord | null = null;
+  private draggedKeys: Set<string> = new Set();
+  private startX: number = 0;
+  private startY: number = 0;
 
   constructor(container: HTMLElement, options: BoardOptions) {
     this.container = container;
     this.onCellSingleClick = options.onCellSingleClick;
     this.onCellDoubleClick = options.onCellDoubleClick;
+    this.onCellDragPlaceBone = options.onCellDragPlaceBone;
+
+    // Escuta movimentos e término do ponteiro em nível de janela para capturar qualquer arrasto suave
+    window.addEventListener('pointermove', this.handlePointerMove);
+    window.addEventListener('pointerup', this.handlePointerUp);
+    window.addEventListener('pointercancel', this.handlePointerUp);
   }
 
   update(board: BoardState, regions: RegionMap, validation: ValidationResult, lockedCells: Set<string> = new Set()) {
@@ -50,6 +67,95 @@ export class BoardComponent {
     }
   }
 
+  private handlePointerMove = (e: PointerEvent) => {
+    if (!this.isPointerDown || !this.dragStartCoord) return;
+
+    const dx = e.clientX - this.startX;
+    const dy = e.clientY - this.startY;
+    const distSq = dx * dx + dy * dy;
+
+    // Se moveu mais que 8px, entra em modo de arrasto contínuo de ossinhos
+    if (distSq >= 64 || this.hasDragged) {
+      if (!this.hasDragged) {
+        this.hasDragged = true;
+        // Cancela qualquer timer de clique pendente
+        if (this.clickTimer !== null) {
+          window.clearTimeout(this.clickTimer);
+          this.clickTimer = null;
+          this.lastClickedCoord = null;
+        }
+
+        // Coloca ossinho na célula inicial se ainda não marcou
+        const startKey = cellKey(this.dragStartCoord.row, this.dragStartCoord.col);
+        if (!this.draggedKeys.has(startKey)) {
+          this.draggedKeys.add(startKey);
+          this.onCellDragPlaceBone(this.dragStartCoord);
+        }
+      }
+
+      // Identifica a célula sobre a qual o ponteiro está passando
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const hitCell = el?.closest('.cell') as HTMLElement | null;
+      if (hitCell && hitCell.dataset.row !== undefined && hitCell.dataset.col !== undefined) {
+        const row = parseInt(hitCell.dataset.row, 10);
+        const col = parseInt(hitCell.dataset.col, 10);
+        const key = cellKey(row, col);
+
+        if (!this.draggedKeys.has(key)) {
+          this.draggedKeys.add(key);
+          this.onCellDragPlaceBone({ row, col });
+        }
+      }
+    }
+  };
+
+  private handlePointerUp = (_e: PointerEvent) => {
+    if (!this.isPointerDown) return;
+    this.isPointerDown = false;
+
+    if (this.hasDragged) {
+      // Finalizou o arrasto de ossinhos com sucesso (não dispara cliques normais)
+      this.hasDragged = false;
+      this.dragStartCoord = null;
+      this.draggedKeys.clear();
+      return;
+    }
+
+    const coord = this.dragStartCoord;
+    this.dragStartCoord = null;
+    this.draggedKeys.clear();
+    if (!coord) return;
+
+    const key = cellKey(coord.row, coord.col);
+    if (this.lockedCells.has(key)) return;
+
+    if (this.clickTimer !== null && this.lastClickedCoord &&
+        this.lastClickedCoord.row === coord.row && this.lastClickedCoord.col === coord.col) {
+      // Duplo clique imediato
+      window.clearTimeout(this.clickTimer);
+      this.clickTimer = null;
+      this.lastClickedCoord = null;
+      this.onCellDoubleClick(coord);
+    } else {
+      // Primeiro clique: aguarda 220ms
+      if (this.clickTimer !== null) {
+        window.clearTimeout(this.clickTimer);
+        if (this.lastClickedCoord) {
+          this.onCellSingleClick(this.lastClickedCoord);
+        }
+      }
+      this.lastClickedCoord = coord;
+      this.clickTimer = window.setTimeout(() => {
+        this.clickTimer = null;
+        const target = this.lastClickedCoord;
+        this.lastClickedCoord = null;
+        if (target) {
+          this.onCellSingleClick(target);
+        }
+      }, 220);
+    }
+  };
+
   render() {
     this.container.innerHTML = '';
 
@@ -63,6 +169,8 @@ export class BoardComponent {
       for (let c = 0; c < this.size; c++) {
         const cellEl = document.createElement('div');
         cellEl.id = `cell-${r}-${c}`;
+        cellEl.dataset.row = r.toString();
+        cellEl.dataset.col = c.toString();
         const regId = this.regions[r][c];
         const state = this.board[r][c];
         const key = cellKey(r, c);
@@ -103,37 +211,17 @@ export class BoardComponent {
           cellEl.innerHTML = `<span class="text-xs opacity-70 select-none scale-90" role="img" aria-label="Ossinho">🦴</span>`;
         }
 
-        // Evento de toque com detecção de clique simples vs duplo
-        cellEl.addEventListener('pointerdown', (e) => {
+        // Início do toque/clique com suporte a arrasto
+        cellEl.addEventListener('pointerdown', (e: PointerEvent) => {
           e.preventDefault();
-          if (isLocked) return; // Não permite clicar em casa já travada!
-          const coord = { row: r, col: c };
+          if (isLocked) return;
 
-          if (this.clickTimer !== null && this.lastClickedCoord &&
-              this.lastClickedCoord.row === r && this.lastClickedCoord.col === c) {
-            // Duplo clique imediato
-            window.clearTimeout(this.clickTimer);
-            this.clickTimer = null;
-            this.lastClickedCoord = null;
-            this.onCellDoubleClick(coord);
-          } else {
-            // Primeiro clique: aguarda 220ms
-            if (this.clickTimer !== null) {
-              window.clearTimeout(this.clickTimer);
-              if (this.lastClickedCoord) {
-                this.onCellSingleClick(this.lastClickedCoord);
-              }
-            }
-            this.lastClickedCoord = coord;
-            this.clickTimer = window.setTimeout(() => {
-              this.clickTimer = null;
-              const target = this.lastClickedCoord;
-              this.lastClickedCoord = null;
-              if (target) {
-                this.onCellSingleClick(target);
-              }
-            }, 220);
-          }
+          this.isPointerDown = true;
+          this.hasDragged = false;
+          this.startX = e.clientX;
+          this.startY = e.clientY;
+          this.dragStartCoord = { row: r, col: c };
+          this.draggedKeys.clear();
         });
 
         gridEl.appendChild(cellEl);

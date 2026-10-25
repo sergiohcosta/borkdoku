@@ -16,7 +16,6 @@ class BorkdokuApp {
   private currentLevel: LevelDefinition;
   private board: BoardState;
   private lives: number = 3;
-  private directPlacementMode: 'normal' | 'dog' | 'bone' = 'normal';
   private lockedCells: Set<string> = new Set<string>();
 
   constructor() {
@@ -44,6 +43,18 @@ class BorkdokuApp {
     }
   }
 
+  private getDogsRemaining(): number {
+    let placed = 0;
+    for (let r = 0; r < this.board.length; r++) {
+      for (let c = 0; c < this.board[r].length; c++) {
+        if (this.board[r][c] === 'dog') {
+          placed++;
+        }
+      }
+    }
+    return Math.max(0, this.currentLevel.size - placed);
+  }
+
   private initUI() {
     const appEl = document.getElementById('app');
     if (!appEl) return;
@@ -53,11 +64,11 @@ class BorkdokuApp {
     boardContainer.className = 'board-wrapper';
     appEl.appendChild(boardContainer);
 
-    // Inicializar HUD com suporte a Vidas e Controles
+    // Inicializar HUD com suporte a Vidas, Regras e Contador de Cães
     this.hud = new HudComponent(appEl, {
       onToggleSound: () => {
         const isMuted = this.sound.toggleMute();
-        this.hud.renderHeader(this.currentLevel, isMuted, this.lives);
+        this.hud.renderHeader(this.currentLevel, isMuted, this.lives, this.getDogsRemaining());
       },
       onReset: () => {
         this.resetLevel();
@@ -68,21 +79,14 @@ class BorkdokuApp {
       onNextLevel: () => {
         const next = getNextLevel(this.currentLevel.id);
         this.startLevel(next);
-      },
-      onSelectDogMode: () => {
-        this.directPlacementMode = this.directPlacementMode === 'dog' ? 'normal' : 'dog';
-        this.showModeToast(this.directPlacementMode === 'dog' ? 'Modo Cão Ativo (toque para colocar)' : 'Modo Padrão');
-      },
-      onSelectBoneMode: () => {
-        this.directPlacementMode = this.directPlacementMode === 'bone' ? 'normal' : 'bone';
-        this.showModeToast(this.directPlacementMode === 'bone' ? 'Modo Ossinho Ativo (toque para marcar)' : 'Modo Padrão');
       }
     });
 
-    // Inicializar Tabuleiro com clique simples e clique duplo
+    // Inicializar Tabuleiro com clique simples, duplo e arrasto contínuo de ossinhos
     this.boardComponent = new BoardComponent(boardContainer, {
       onCellSingleClick: (coord) => this.handleCellSingleClick(coord),
-      onCellDoubleClick: (coord) => this.handleCellDoubleClick(coord)
+      onCellDoubleClick: (coord) => this.handleCellDoubleClick(coord),
+      onCellDragPlaceBone: (coord) => this.handleCellDragPlaceBone(coord)
     });
 
     // Inicializar Modal de Ajustes
@@ -103,18 +107,6 @@ class BorkdokuApp {
     this.hud.renderBottomControls();
   }
 
-  private showModeToast(message: string) {
-    const oldToast = document.getElementById('mode-toast');
-    if (oldToast) oldToast.remove();
-
-    const toast = document.createElement('div');
-    toast.id = 'mode-toast';
-    toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[var(--text-main)] text-[var(--bg-surface)] text-xs font-bold shadow-lg z-40 animate-fade-in pointer-events-none';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1200);
-  }
-
   startLevel(level: LevelDefinition) {
     this.currentLevel = level;
     this.storage.setCurrentLevelId(level.id); // Salva imediatamente no localStorage
@@ -122,7 +114,7 @@ class BorkdokuApp {
     this.lockedCells.clear(); // Limpa as travas
     this.board = createEmptyBoard(level.size);
 
-    this.hud.renderHeader(this.currentLevel, this.sound.getMuted(), this.lives);
+    this.hud.renderHeader(this.currentLevel, this.sound.getMuted(), this.lives, this.getDogsRemaining());
     this.hud.startTimer();
     this.updateBoardAndValidate();
   }
@@ -132,6 +124,7 @@ class BorkdokuApp {
     this.lockedCells.clear();
     this.board = createEmptyBoard(this.currentLevel.size);
     this.hud.setLives(this.lives);
+    this.hud.setDogsRemaining(this.getDogsRemaining(), this.currentLevel.size);
     this.hud.startTimer();
     this.updateBoardAndValidate();
     this.sound.playRemove();
@@ -143,11 +136,6 @@ class BorkdokuApp {
 
     const key = cellKey(coord.row, coord.col);
     if (this.lockedCells.has(key)) return; // Casa travada não aceita cliques
-
-    if (this.directPlacementMode === 'dog') {
-      this.attemptPlaceDog(coord);
-      return;
-    }
 
     const current = this.board[coord.row][coord.col];
     if (current === 'empty') {
@@ -180,6 +168,22 @@ class BorkdokuApp {
     }
 
     this.attemptPlaceDog(coord);
+  }
+
+  // Arrasto contínuo: vai colocando ossinhos nas casas vazias pelo caminho
+  handleCellDragPlaceBone(coord: CellCoord) {
+    if (this.lives <= 0) return;
+
+    const key = cellKey(coord.row, coord.col);
+    if (this.lockedCells.has(key)) return;
+
+    const current = this.board[coord.row][coord.col];
+    // Só coloca ossinho em casa vazia (não altera cães já colocados nem casas travadas)
+    if (current === 'empty') {
+      this.board[coord.row][coord.col] = 'bone';
+      this.sound.playBone();
+      this.updateBoardAndValidate();
+    }
   }
 
   // Tentativa de posicionamento com validação estrita, sistema de 3 vidas e trava de ossinho
@@ -223,6 +227,9 @@ class BorkdokuApp {
   updateBoardAndValidate() {
     const val = validateBoard(this.board, this.currentLevel.regions);
     this.boardComponent.update(this.board, this.currentLevel.regions, val, this.lockedCells);
+
+    // Atualiza o contador de cães restantes
+    this.hud.setDogsRemaining(this.getDogsRemaining(), this.currentLevel.size);
 
     if (val.isSolved) {
       const timeSpent = this.hud.stopTimer();
