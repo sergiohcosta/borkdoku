@@ -94,7 +94,7 @@ export class HudComponent {
             <span class="text-3xl animate-wag">🐶</span>
             <div>
               <h1 class="text-xl font-bold tracking-tight text-[var(--text-main)] m-0 leading-tight">Borkdoku</h1>
-              <p class="text-xs text-[var(--text-muted)] m-0 font-medium">${level.name} (${level.size}x${level.size})</p>
+              <p class="text-xs text-[var(--text-muted)] m-0 font-medium">${level.name} (${level.difficulty} • ${level.size}x${level.size})</p>
             </div>
           </div>
 

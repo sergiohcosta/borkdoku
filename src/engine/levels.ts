@@ -7,7 +7,7 @@ export interface LevelDefinition {
   breed: string; // Raça do cachorrinho colecionável desbloqueada
   breedIcon: string;
   size: number;
-  difficulty: 'Fácil' | 'Médio' | 'Difícil' | 'Mestre';
+  difficulty: 'Fácil' | 'Médio' | 'Difícil' | 'Mestre' | 'Grão-Mestre' | 'Lenda';
   regions: RegionMap;
   solution: number[]; // colunas da solução por linha
 }
@@ -245,14 +245,14 @@ function findRandomValidPlacement(size: number, rng: () => number): number[] | n
   return null;
 }
 
-function growRegions(size: number, solution: number[], rng: () => number): RegionMap {
+function growRegions(
+  size: number,
+  solution: number[],
+  targetBuckets: number[],
+  rng: () => number
+): RegionMap {
   const grid: number[][] = Array.from({ length: size }, () => new Array(size).fill(-1));
-  const sortedTargetBuckets = size === 5 ? [1, 3, 5, 7, 9] :
-    size === 6 ? [1, 2, 4, 6, 8, 15] :
-    size === 7 ? [1, 2, 3, 5, 8, 12, 18] :
-    [1, 1, 2, 3, 6, 9, 14, 28]; // 8x8 balanceado com âncoras unitárias
-
-  const targetSizes = [...sortedTargetBuckets];
+  const targetSizes = [...targetBuckets];
   for (let i = targetSizes.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [targetSizes[i], targetSizes[j]] = [targetSizes[j], targetSizes[i]];
@@ -313,22 +313,66 @@ function growRegions(size: number, solution: number[], rng: () => number): Regio
 }
 
 /**
- * Gera proceduralmente um nível com garantia matemática de unicidade.
+ * Retorna as configurações de particionamento e restrições de acordo com a curva de dificuldade progressiva:
+ * - Níveis 1-12 (5x5, Fácil): Acolhimento, aprendizado rápido e dopamina inicial
+ * - Níveis 13-35 (6x6, Médio): Primeiras deduções espaciais e cantos
+ * - Níveis 36-80 (7x7, Difícil): Regiões maiores e raciocínio de paridade de linhas
+ * - Níveis 81-250 (8x8, Mestre): Entrada no padrão 64 casas com âncoras suaves
+ * - Níveis 251-500 (8x8, Mestre - ex: Nível 400): Máximo 1 âncora, deduções avançadas (pointing pairs)
+ * - Níveis 501-800 (8x8, Grão-Mestre - ex: Nível 700): Equilíbrio topológico refinado, sem atalhos
+ * - Níveis 801+ (8x8, Lenda Canina): Desafio puro com cadeias profundas de eliminação
  */
-export function generateLevel(levelNumber: number): LevelDefinition {
-  const size = levelNumber <= 10 ? 5 :
-               levelNumber <= 30 ? 6 :
-               levelNumber <= 70 ? 7 : 8;
+export function getTierSettings(levelNumber: number, attempt: number): {
+  size: number;
+  difficulty: LevelDefinition['difficulty'];
+  buckets: number[];
+  maxSingletons: number;
+} {
+  const size = levelNumber <= 12 ? 5 :
+               levelNumber <= 35 ? 6 :
+               levelNumber <= 80 ? 7 : 8;
 
   const difficulty: LevelDefinition['difficulty'] =
     size === 5 ? 'Fácil' :
     size === 6 ? 'Médio' :
-    size === 7 ? 'Difícil' : 'Mestre';
+    size === 7 ? 'Difícil' :
+    levelNumber <= 500 ? 'Mestre' :
+    levelNumber <= 800 ? 'Grão-Mestre' : 'Lenda';
 
+  const maxSingletons =
+    size <= 6 ? 2 :
+    levelNumber <= 250 ? 2 : 1;
+
+  let buckets: number[];
+  if (size === 5) {
+    buckets = [1, 2, 4, 7, 11];
+  } else if (size === 6) {
+    buckets = [1, 2, 4, 6, 9, 14];
+  } else if (size === 7) {
+    buckets = [1, 2, 3, 5, 8, 12, 18];
+  } else if (attempt > 200) {
+    // Escalada de tolerância para garantir geração síncrona em <50ms
+    buckets = [1, 1, 2, 3, 6, 9, 14, 28];
+  } else if (levelNumber <= 250) {
+    buckets = [1, 1, 2, 4, 6, 8, 14, 28];
+  } else if (levelNumber <= 600) {
+    buckets = [1, 2, 2, 4, 6, 9, 14, 26];
+  } else {
+    buckets = [1, 2, 3, 4, 6, 9, 13, 26];
+  }
+
+  return { size, difficulty, buckets, maxSingletons };
+}
+
+/**
+ * Gera proceduralmente um nível com garantia matemática de unicidade e curva calibrada de dificuldade.
+ */
+export function generateLevel(levelNumber: number): LevelDefinition {
   const breedInfo = DOG_BREEDS[(levelNumber - 1) % DOG_BREEDS.length];
 
   let attempt = 0;
   while (attempt < 500) {
+    const { size, difficulty, buckets, maxSingletons } = getTierSettings(levelNumber, attempt);
     const seed = levelNumber * 7919 + attempt * 997 + 12345;
     const rng = createRng(seed);
     const sol = findRandomValidPlacement(size, rng);
@@ -337,7 +381,26 @@ export function generateLevel(levelNumber: number): LevelDefinition {
       continue;
     }
 
-    const regions = growRegions(size, sol, rng);
+    const regions = growRegions(size, sol, buckets, rng);
+
+    // Evita proliferação de âncoras óbvias em fases avançadas
+    if (attempt < 200) {
+      const counts = new Array(size).fill(0);
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          counts[regions[r][c]]++;
+        }
+      }
+      let singletons = 0;
+      for (let i = 0; i < size; i++) {
+        if (counts[i] === 1) singletons++;
+      }
+      if (singletons > maxSingletons) {
+        attempt++;
+        continue;
+      }
+    }
+
     const check = solvePuzzle(regions, 2);
     if (check.isUnique) {
       return {
