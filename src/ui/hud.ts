@@ -3,7 +3,7 @@ import { type LevelDefinition } from '../engine/levels.js';
 export interface HudCallbacks {
   onToggleSound: () => void;
   onReset: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (tab?: 'levels' | 'collection' | 'achievements' | 'settings') => void;
   onNextLevel: () => void;
 }
 
@@ -92,13 +92,16 @@ export class HudComponent {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-3xl animate-wag">🐶</span>
-            <div>
+            <div id="btn-header-level" class="cursor-pointer" title="Ver Níveis e Dificuldades">
               <h1 class="text-xl font-bold tracking-tight text-[var(--text-main)] m-0 leading-tight">Borkdoku</h1>
-              <p class="text-xs text-[var(--text-muted)] m-0 font-medium">${level.name} (${level.difficulty} • ${level.size}x${level.size})</p>
+              <p class="text-xs text-[var(--text-muted)] m-0 font-medium hover:text-[var(--accent-gold)] transition-all">${level.name} (${level.difficulty} • ${level.size}x${level.size}) ▾</p>
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
+            <button id="btn-levels" class="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm active:scale-95 transition-transform cursor-pointer" aria-label="Níveis e Coleção" title="Níveis e Coleção">
+              🐾
+            </button>
             <button id="btn-sound" class="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm active:scale-95 transition-transform cursor-pointer" aria-label="Som">
               ${isMuted ? '🔇' : '🔊'}
             </button>
@@ -175,9 +178,11 @@ export class HudComponent {
       this.container.insertAdjacentHTML('afterbegin', headerHtml);
     }
 
+    document.getElementById('btn-levels')?.addEventListener('click', () => this.callbacks.onOpenSettings('levels'));
+    document.getElementById('btn-header-level')?.addEventListener('click', () => this.callbacks.onOpenSettings('levels'));
     document.getElementById('btn-sound')?.addEventListener('click', this.callbacks.onToggleSound);
     document.getElementById('btn-reset')?.addEventListener('click', this.callbacks.onReset);
-    document.getElementById('btn-settings')?.addEventListener('click', this.callbacks.onOpenSettings);
+    document.getElementById('btn-settings')?.addEventListener('click', () => this.callbacks.onOpenSettings('settings'));
 
     // Evento de abrir/fechar as regras colapsáveis
     document.getElementById('btn-toggle-rules')?.addEventListener('click', () => {
@@ -240,14 +245,14 @@ export class HudComponent {
           <p class="text-sm text-[var(--text-muted)] mt-1 mb-0">Você acomodou todos os cachorrinhos sem nenhum conflito!</p>
         </div>
 
-        <div class="bg-[var(--bg-card)] rounded-2xl p-3 w-full flex items-center justify-around border border-[var(--border-color)]">
+        <div id="btn-victory-collection" class="bg-[var(--bg-card)] rounded-2xl p-3 w-full flex items-center justify-around border border-[var(--border-color)] cursor-pointer hover:border-[var(--accent-gold)] transition-colors" title="Ver no Álbum de Cães">
           <div>
             <span class="text-xs text-[var(--text-muted)] block font-semibold">TEMPO</span>
             <span class="text-lg font-black font-mono">${timeStr}</span>
           </div>
           <div class="w-[1px] h-8 bg-[var(--border-color)]"></div>
           <div>
-            <span class="text-xs text-[var(--text-muted)] block font-semibold">COLEÇÃO</span>
+            <span class="text-xs text-[var(--text-muted)] block font-semibold">COLEÇÃO ▾</span>
             <span class="text-sm font-bold flex items-center gap-1 justify-center">
               <span>${level.breedIcon}</span>
               <span>${level.breed}</span>
@@ -270,6 +275,11 @@ export class HudComponent {
     document.getElementById('btn-modal-next')?.addEventListener('click', () => {
       modal.remove();
       this.callbacks.onNextLevel();
+    });
+
+    document.getElementById('btn-victory-collection')?.addEventListener('click', () => {
+      modal.remove();
+      this.callbacks.onOpenSettings('collection');
     });
   }
 

@@ -73,8 +73,8 @@ class BorkdokuApp {
       onReset: () => {
         this.resetLevel();
       },
-      onOpenSettings: () => {
-        this.settingsModal.show();
+      onOpenSettings: (tab) => {
+        this.settingsModal.show(tab);
       },
       onNextLevel: () => {
         const next = getNextLevel(this.currentLevel.id);

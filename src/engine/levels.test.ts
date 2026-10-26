@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { getLevel, getLevelById, getNextLevel } from './levels.js';
+import { getLevel, getLevelById, getNextLevel, DIFFICULTY_TIERS, getTierForLevel, DOG_BREEDS } from './levels.js';
 import { solvePuzzle } from './solver.js';
 
 test('Níveis curados iniciais 1 a 8 estão intactos', () => {
@@ -69,4 +69,35 @@ test('getNextLevel avança do 399 ao 400 e do 400 ao 401', () => {
 
   const next401 = getNextLevel('level-400');
   assert.strictEqual(next401.id, 'level-401');
+});
+
+test('Estrutura de Tiers de Dificuldade e Coleção de 40 Raças', () => {
+  assert.strictEqual(DIFFICULTY_TIERS.length, 7);
+  assert.strictEqual(DOG_BREEDS.length, 40);
+
+  // Mapeamento correto de tiers
+  const tierLvl5 = getTierForLevel(5);
+  assert.strictEqual(tierLvl5.id, 'tier-1');
+  assert.strictEqual(tierLvl5.name, 'Iniciante');
+  assert.strictEqual(tierLvl5.difficulty, 'Fácil');
+
+  const tierLvl20 = getTierForLevel(20);
+  assert.strictEqual(tierLvl20.id, 'tier-2');
+  assert.strictEqual(tierLvl20.name, 'Aprendiz');
+
+  const tierLvl50 = getTierForLevel(50);
+  assert.strictEqual(tierLvl50.id, 'tier-3');
+  assert.strictEqual(tierLvl50.name, 'Intermediário');
+
+  const tierLvl400 = getTierForLevel(400);
+  assert.strictEqual(tierLvl400.id, 'tier-5');
+  assert.strictEqual(tierLvl400.name, 'Mestre Avançado');
+
+  const tierLvl700 = getTierForLevel(700);
+  assert.strictEqual(tierLvl700.id, 'tier-6');
+  assert.strictEqual(tierLvl700.name, 'Grão-Mestre');
+
+  const tierLvl999 = getTierForLevel(999);
+  assert.strictEqual(tierLvl999.id, 'tier-7');
+  assert.strictEqual(tierLvl999.name, 'Lenda Canina');
 });

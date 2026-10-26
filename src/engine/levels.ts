@@ -55,6 +55,107 @@ export const DOG_BREEDS = [
   { name: 'Terra Nova Nadador', icon: '🐶' }
 ];
 
+export interface DifficultyTier {
+  id: string;
+  name: string;
+  minLevel: number;
+  maxLevel: number;
+  size: number;
+  difficulty: LevelDefinition['difficulty'];
+  icon: string;
+  tagline: string;
+  description: string;
+}
+
+export const DIFFICULTY_TIERS: DifficultyTier[] = [
+  {
+    id: 'tier-1',
+    name: 'Iniciante',
+    minLevel: 1,
+    maxLevel: 12,
+    size: 5,
+    difficulty: 'Fácil',
+    icon: '🌱',
+    tagline: '5x5 • Âncoras Diretas',
+    description: 'Tabuleiros 5x5 acolhedores para aprender as regras e relaxar sem pressão.'
+  },
+  {
+    id: 'tier-2',
+    name: 'Aprendiz',
+    minLevel: 13,
+    maxLevel: 35,
+    size: 6,
+    difficulty: 'Médio',
+    icon: '🐾',
+    tagline: '6x6 • Diagonais & Quinas',
+    description: 'Introdução suave a cantos e eliminação de casas pelo toque de ponta.'
+  },
+  {
+    id: 'tier-3',
+    name: 'Intermediário',
+    minLevel: 36,
+    maxLevel: 80,
+    size: 7,
+    difficulty: 'Difícil',
+    icon: '🧭',
+    tagline: '7x7 • Paridade de Linhas',
+    description: 'Regiões serpenteantes que exigem cruzar informações de linhas e colunas.'
+  },
+  {
+    id: 'tier-4',
+    name: 'Mestre Entrada',
+    minLevel: 81,
+    maxLevel: 250,
+    size: 8,
+    difficulty: 'Mestre',
+    icon: '⭐',
+    tagline: '8x8 • Transição Suave',
+    description: 'Entrada no padrão clássico de 64 casas com âncoras amigáveis para pegar o ritmo.'
+  },
+  {
+    id: 'tier-5',
+    name: 'Mestre Avançado',
+    minLevel: 251,
+    maxLevel: 500,
+    size: 8,
+    difficulty: 'Mestre',
+    icon: '🏆',
+    tagline: '8x8 • Pointing Pairs',
+    description: 'Fases desafiadoras (ex: Nível 400). Sem atalhos fáceis; deduções avançadas de linha.'
+  },
+  {
+    id: 'tier-6',
+    name: 'Grão-Mestre',
+    minLevel: 501,
+    maxLevel: 800,
+    size: 8,
+    difficulty: 'Grão-Mestre',
+    icon: '🔮',
+    tagline: '8x8 • Raciocínio Profundo',
+    description: 'Equilíbrio topológico apurado (ex: Nível 700). Cadeias de 3 a 5 passos dedutivos.'
+  },
+  {
+    id: 'tier-7',
+    name: 'Lenda Canina',
+    minLevel: 801,
+    maxLevel: 1000,
+    size: 8,
+    difficulty: 'Lenda',
+    icon: '👑',
+    tagline: '8x8 • O Ápice da Lógica',
+    description: 'O topo supremo do Borkdoku. Para quem dominou completamente a arte do Star Battle.'
+  }
+];
+
+export function getTierForLevel(levelNumber: number): DifficultyTier {
+  for (const tier of DIFFICULTY_TIERS) {
+    if (levelNumber >= tier.minLevel && levelNumber <= tier.maxLevel) {
+      return tier;
+    }
+  }
+  return DIFFICULTY_TIERS[DIFFICULTY_TIERS.length - 1];
+}
+
 export const CURATED_LEVELS: LevelDefinition[] = [
   {
     id: 'level-1',

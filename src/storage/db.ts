@@ -142,6 +142,52 @@ export class GameStorage {
     return stats;
   }
 
+  getCompletedLevelNumbers(): Set<number> {
+    const list = this.getCompletedLevels();
+    const set = new Set<number>();
+    for (const item of list) {
+      const match = item.levelId.match(/\d+/);
+      if (match) {
+        set.add(parseInt(match[0], 10));
+      }
+    }
+    return set;
+  }
+
+  isLevelCompleted(levelNumber: number): boolean {
+    return this.getCompletedLevelNumbers().has(levelNumber);
+  }
+
+  getCompletedLevelsCount(): number {
+    return this.getCompletedLevelNumbers().size;
+  }
+
+  getCompletedCountInTier(minLevel: number, maxLevel: number): number {
+    const completedSet = this.getCompletedLevelNumbers();
+    let count = 0;
+    for (const num of completedSet) {
+      if (num >= minLevel && num <= maxLevel) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  getHighestLevelReached(): number {
+    const completedSet = this.getCompletedLevelNumbers();
+    const currentNum = parseInt(this.getCurrentLevelId().replace('level-', ''), 10) || 1;
+    let max = currentNum;
+    for (const num of completedSet) {
+      if (num > max) max = num;
+    }
+    return max;
+  }
+
+  getRecentCompletedLevels(limit: number = 8): CompletedLevel[] {
+    const list = this.getCompletedLevels();
+    return [...list].reverse().slice(0, limit);
+  }
+
   // --- BREEDS ---
   getUnlockedBreeds(): string[] {
     try {
