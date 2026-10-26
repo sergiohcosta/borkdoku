@@ -456,10 +456,9 @@ export function getTierSettings(levelNumber: number, attempt: number): {
     buckets = [1, 1, 2, 3, 6, 9, 14, 28];
   } else if (levelNumber <= 250) {
     buckets = [1, 1, 2, 4, 6, 8, 14, 28];
-  } else if (levelNumber <= 600) {
-    buckets = [1, 2, 2, 4, 6, 9, 14, 26];
   } else {
-    buckets = [1, 2, 3, 4, 6, 9, 13, 26];
+    // Níveis 251+: Bucket equilibrado mestre com estritamente 1 singleton e alta profundidade
+    buckets = [1, 2, 2, 4, 6, 9, 14, 26];
   }
 
   return { size, difficulty, buckets, maxSingletons };
