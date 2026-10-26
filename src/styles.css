@@ -240,6 +240,7 @@ body {
 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .shrink-0 { flex-shrink: 0; }
+.min-h-0 { min-height: 0 !important; }
 .overflow-hidden { overflow: hidden; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .h-2 { height: 0.5rem; }
@@ -247,6 +248,9 @@ body {
 .h-3 { height: 0.75rem; }
 .w-10 { width: 2.5rem; }
 .h-10 { height: 2.5rem; }
+.pr-0\.5 { padding-right: 2px; }
+.pr-1 { padding-right: 4px; }
+.pr-2 { padding-right: 8px; }
 
 .gap-0\.5 { gap: 2px; }
 .gap-1 { gap: 4px; }
@@ -365,11 +369,51 @@ body {
 .max-w-sm { max-width: 24rem; }
 .max-w-md { max-width: 28rem; }
 .max-w-lg { max-width: 32rem; }
+.h-\[88dvh\] { height: 88dvh; }
+.max-h-\[88dvh\] { max-height: 88dvh; }
 .max-h-\[90dvh\] { max-height: 90dvh; }
+.max-h-\[92dvh\] { max-height: 92dvh; }
 .max-h-24 { max-height: 6rem; }
 .overflow-y-auto { overflow-y: auto; }
 .backdrop-blur-sm { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .bg-black\/60 { background-color: rgba(0, 0, 0, 0.6); }
+
+/* Diálogo da Central e Área de Rolagem Otimizada */
+.hub-dialog {
+  width: 100%;
+  max-width: 28rem;
+  height: 88dvh;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.hub-scroll-area {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.hub-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+.hub-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hub-scroll-area::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+.hub-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold);
+}
 
 /* Animações */
 @keyframes fadeIn {

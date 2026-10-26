@@ -38,7 +38,7 @@ export class SettingsModal {
     this.modalEl = modal;
 
     modal.innerHTML = `
-      <div class="bg-[var(--bg-surface)] text-[var(--text-main)] rounded-3xl p-5 max-w-md w-full shadow-2xl border border-[var(--border-color)] flex flex-col gap-3.5 max-h-[92dvh] overflow-hidden">
+      <div class="hub-dialog bg-[var(--bg-surface)] text-[var(--text-main)] rounded-3xl p-5 shadow-2xl border border-[var(--border-color)] flex flex-col gap-3.5">
         <!-- Topo: Título & Fechar -->
         <div class="flex items-center justify-between pb-2 border-b border-[var(--border-color)] shrink-0">
           <div class="flex items-center gap-2">
@@ -72,7 +72,7 @@ export class SettingsModal {
         </div>
 
         <!-- Conteúdo Rolável da Aba -->
-        <div id="hub-content" class="flex-1 overflow-y-auto pr-0.5 flex flex-col gap-3">
+        <div id="hub-content" class="hub-scroll-area pr-1 flex flex-col gap-3">
           <!-- Renderizado via renderTabContent -->
         </div>
       </div>
@@ -85,6 +85,14 @@ export class SettingsModal {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) this.close();
     });
+
+    // No desktop, permite que rolar a roda do mouse em qualquer lugar do modal role o conteúdo
+    modal.addEventListener('wheel', (e) => {
+      const content = document.getElementById('hub-content');
+      if (content && e.target !== content && !content.contains(e.target as Node)) {
+        content.scrollTop += e.deltaY;
+      }
+    }, { passive: true });
 
     // Cliques nas abas
     modal.querySelectorAll('.hub-tab').forEach((btn) => {
@@ -397,7 +405,7 @@ export class SettingsModal {
       <div class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col gap-2">
         <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] m-0">Fases Concluídas Recentemente</h4>
         ${recentLevels.length > 0 ? `
-          <div class="flex flex-col gap-1.5 max-h-36 overflow-y-auto pt-1">
+          <div class="flex flex-col gap-1.5 pt-1">
             ${recentLevels.map((item) => `
               <div class="flex items-center justify-between p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs">
                 <div class="flex items-center gap-1.5">
