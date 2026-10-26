@@ -12,6 +12,11 @@ export interface BoardOptions {
   onCellDragPlaceBone: (coord: CellCoord) => void;
 }
 
+function renderBoneSvg(isLocked: boolean = false): string {
+  const lockedClass = isLocked ? 'bone-icon-locked' : '';
+  return `<svg class="bone-icon ${lockedClass} select-none" viewBox="0 0 32 32" aria-label="${isLocked ? 'Ossinho fixo' : 'Ossinho'}"><path class="bone-path" d="M7 11.5 C5.6 11.5 4.5 12.6 4.5 14 C4.5 14.6 4.7 15.1 5 15.5 C4.7 15.9 4.5 16.4 4.5 17 C4.5 18.4 5.6 19.5 7 19.5 C8.1 19.5 9 18.8 9.3 17.8 L22.7 17.8 C23 18.8 23.9 19.5 25 19.5 C26.4 19.5 27.5 18.4 27.5 17 C27.5 16.4 27.3 15.9 27 15.5 C27.3 15.1 27.5 14.6 27.5 14 C27.5 12.6 26.4 11.5 25 11.5 C23.9 11.5 23 12.2 22.7 13.2 L9.3 13.2 C9 12.2 8.1 11.5 7 11.5 Z" /></svg>`;
+}
+
 export class BoardComponent {
   private container: HTMLElement;
   private size: number = 5;
@@ -204,11 +209,11 @@ export class BoardComponent {
 
         // Conteúdo da célula
         if (isLocked) {
-          cellEl.innerHTML = `<span class="text-xs opacity-60 select-none scale-90" role="img" aria-label="Ossinho bloqueado">🦴</span>`;
+          cellEl.innerHTML = renderBoneSvg(true);
         } else if (state === 'dog') {
           cellEl.innerHTML = `<span class="cell-pop text-2xl select-none" role="img" aria-label="Cachorrinho">🐶</span>`;
         } else if (state === 'bone') {
-          cellEl.innerHTML = `<span class="text-xs opacity-70 select-none scale-90" role="img" aria-label="Ossinho">🦴</span>`;
+          cellEl.innerHTML = renderBoneSvg(false);
         }
 
         // Início do toque/clique com suporte a arrasto

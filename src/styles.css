@@ -22,6 +22,13 @@
   --reg-6: #D1EBEB; /* Menta suave */
   --reg-7: #F3DEC2; /* Areia quente */
   --reg-8: #E2DECF; /* Linho cinzento */
+
+  /* Cores de alto contraste para o marcador de ossinho */
+  --bone-color: #4A2810; /* Chocolate quente escuro (contraste 10:1+ em tons pastel) */
+  --bone-stroke: #2E1505;
+  --bone-shadow: rgba(46, 21, 5, 0.28);
+  --bone-locked-color: #B3261E; /* Vermelho carmim para erro travado */
+  --bone-locked-stroke: #73130F;
 }
 
 body.dark-mode {
@@ -48,6 +55,13 @@ body.dark-mode {
   --reg-6: #254F4F;
   --reg-7: #4F3B22;
   --reg-8: #3D3A31;
+
+  /* Ossinho no modo noturno */
+  --bone-color: #F8E6D2; /* Marfim claro iluminado (contraste 12:1+) */
+  --bone-stroke: #FFFFFF;
+  --bone-shadow: rgba(0, 0, 0, 0.6);
+  --bone-locked-color: #FF8F8C;
+  --bone-locked-stroke: #FFA4A1;
 }
 
 * {
@@ -124,11 +138,39 @@ body {
 
 .cell-locked {
   cursor: not-allowed !important;
-  opacity: 0.8;
+  background-image: radial-gradient(circle, rgba(179, 38, 30, 0.12) 0%, transparent 75%);
 }
 
 .cell-locked:active {
   transform: none !important;
+}
+
+/* Ícone de Ossinho de Alto Contraste */
+.bone-icon {
+  display: block;
+  width: clamp(20px, 4.8vw, 28px);
+  height: clamp(20px, 4.8vw, 28px);
+  transform: rotate(-25deg);
+  filter: drop-shadow(0 2px 2px var(--bone-shadow));
+  pointer-events: none;
+  animation: bone-pop 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bone-icon .bone-path {
+  fill: var(--bone-color);
+  stroke: var(--bone-stroke);
+  stroke-width: 1.4px;
+  stroke-linejoin: round;
+}
+
+.bone-icon-locked .bone-path {
+  fill: var(--bone-locked-color);
+  stroke: var(--bone-locked-stroke);
+}
+
+@keyframes bone-pop {
+  0% { transform: scale(0.6) rotate(-25deg); opacity: 0.3; }
+  100% { transform: scale(1) rotate(-25deg); opacity: 1; }
 }
 
 .cell-error {
@@ -138,12 +180,11 @@ body {
 }
 
 .cell-pop {
-  animation: dog-pop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: dog-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes dog-pop {
-  0% { transform: scale(0.4); opacity: 0; }
-  70% { transform: scale(1.18); }
+  0% { transform: scale(0.6); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 
@@ -165,11 +206,14 @@ body {
   transform-origin: bottom center;
 }
 
-/* Bordas espessas e nítidas entre regiões diferentes */
-.border-t-region { border-top: 3px solid var(--text-main) !important; }
-.border-b-region { border-bottom: 3px solid var(--text-main) !important; }
-.border-l-region { border-left: 3px solid var(--text-main) !important; }
-.border-r-region { border-right: 3px solid var(--text-main) !important; }
+/* Bordas espessas e nítidas entre regiões diferentes do tabuleiro */
+:root {
+  --region-border-w: 3px;
+}
+.border-t-region { border-top: var(--region-border-w) solid var(--text-main) !important; }
+.border-b-region { border-bottom: var(--region-border-w) solid var(--text-main) !important; }
+.border-l-region { border-left: var(--region-border-w) solid var(--text-main) !important; }
+.border-r-region { border-right: var(--region-border-w) solid var(--text-main) !important; }
 
 /* ==========================================================================
    Utilitários de Layout, Tipografia e Componentes
@@ -329,8 +373,8 @@ body {
 }
 .animate-scale-up { animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@keyframes sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+  50% { transform: scale(1.15) rotate(10deg); opacity: 1; }
 }
-.animate-bounce { animation: bounce 1s infinite ease-in-out; }
+.animate-sparkle { animation: sparkle 1.6s infinite ease-in-out; }

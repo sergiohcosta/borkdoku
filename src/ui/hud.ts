@@ -232,7 +232,7 @@ export class HudComponent {
       <div class="bg-[var(--bg-surface)] text-[var(--text-main)] rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-[var(--accent-gold)] text-center flex flex-col items-center gap-4 animate-scale-up">
         <div class="relative">
           <span class="text-7xl block animate-wag">🐶</span>
-          <span class="absolute -top-1 -right-2 text-2xl animate-bounce">✨</span>
+          <span class="absolute -top-1 -right-2 text-2xl animate-sparkle">✨</span>
         </div>
 
         <div>
