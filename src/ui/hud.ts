@@ -149,7 +149,7 @@ export class HudComponent {
             </div>
             <div class="flex items-start gap-2">
               <span class="text-base leading-none">↔️</span>
-              <p class="m-0 text-[var(--text-main)] leading-snug"><strong>1 por linha e coluna:</strong> Duas patinhas nunca podem dividir a mesma linha ou coluna.</p>
+              <p class="m-0 text-[var(--text-main)] leading-snug"><strong>1 por linha e coluna:</strong> Dois cachorrinhos nunca podem dividir a mesma linha ou coluna.</p>
             </div>
             <div class="flex items-start gap-2">
               <span class="text-base leading-none">🐾</span>
