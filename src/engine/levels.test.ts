@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { getLevel, getLevelById, getNextLevel, DIFFICULTY_TIERS, getTierForLevel, DOG_BREEDS } from './levels.js';
+import { getLevel, getLevelById, getNextLevel, DIFFICULTY_TIERS, getTierForLevel, DOG_BREEDS, DOG_PLACES, generateLevelName } from './levels.js';
 import { solvePuzzle } from './solver.js';
 
 test('Níveis curados iniciais 1 a 8 estão intactos', () => {
@@ -71,9 +71,10 @@ test('getNextLevel avança do 399 ao 400 e do 400 ao 401', () => {
   assert.strictEqual(next401.id, 'level-401');
 });
 
-test('Estrutura de Tiers de Dificuldade e Coleção de 40 Raças', () => {
+test('Estrutura de Tiers de Dificuldade e Coleção de 60 Raças', () => {
   assert.strictEqual(DIFFICULTY_TIERS.length, 7);
-  assert.strictEqual(DOG_BREEDS.length, 40);
+  assert.strictEqual(DOG_BREEDS.length, 60);
+  assert.strictEqual(DOG_PLACES.length, 53);
 
   // Mapeamento correto de tiers
   const tierLvl5 = getTierForLevel(5);
@@ -100,4 +101,24 @@ test('Estrutura de Tiers de Dificuldade e Coleção de 40 Raças', () => {
   const tierLvl999 = getTierForLevel(999);
   assert.strictEqual(tierLvl999.id, 'tier-7');
   assert.strictEqual(tierLvl999.name, 'Lenda Canina');
+});
+
+test('Geração combinatória de nomes de fases preserva artesanais 1-8 e cruza 53 lugares com 60 raças', () => {
+  // Fases artesanais
+  assert.strictEqual(generateLevelName(1), 'O Cantinho do Golden');
+  assert.strictEqual(generateLevelName(8), 'O Bosque do São Bernardo');
+
+  // Nomes gerados proceduralmente com gramática precisa (do / da)
+  assert.strictEqual(generateLevelName(9), 'Nível 9: A Colina do Shiba Inu Solitário');
+  assert.strictEqual(generateLevelName(15), 'Nível 15: O Sofá da Dálmata Pintada');
+  assert.strictEqual(generateLevelName(400), 'Nível 400: O Cantinho do Terra Nova Nadador');
+  assert.strictEqual(generateLevelName(1000), 'Nível 1000: O Mirante do Terra Nova Nadador');
+
+  // Verificação nos objetos LevelDefinition gerados
+  const lvl9 = getLevel(9);
+  assert.strictEqual(lvl9.name, 'Nível 9: A Colina do Shiba Inu Solitário');
+  assert.strictEqual(lvl9.breed, 'Shiba Inu Solitário');
+
+  const lvl400 = getLevelById('level-400');
+  assert.strictEqual(lvl400.name, 'Nível 400: O Cantinho do Terra Nova Nadador');
 });

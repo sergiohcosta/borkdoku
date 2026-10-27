@@ -305,7 +305,7 @@ export class SettingsModal {
         </button>
       </div>
 
-      <!-- Grade dos 40 Cachorrinhos -->
+      <!-- Grade das 60 Raças de Cachorrinhos -->
       <div class="grid grid-cols-2 gap-2 pt-1">
         ${filteredBreeds.map((dog) => {
           if (dog.isUnlocked) {

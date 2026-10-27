@@ -12,47 +12,129 @@ export interface LevelDefinition {
   solution: number[]; // colunas da solução por linha
 }
 
-export const DOG_BREEDS = [
-  { name: 'Golden Retriever', icon: '🐕' },
-  { name: 'Pug Travesso', icon: '🐶' },
-  { name: 'Beagle Curioso', icon: '🦮' },
-  { name: 'Corgi Real', icon: '🐕‍🦺' },
-  { name: 'Husky Siberiano', icon: '🐺' },
-  { name: 'Pastor Alemão Leal', icon: '🐕' },
-  { name: 'Poodle Elegante', icon: '🐩' },
-  { name: 'São Bernardo Guardião', icon: '🐶' },
-  { name: 'Shiba Inu Solitário', icon: '🐕' },
-  { name: 'Dachshund (Salsicha)', icon: '🌭' },
-  { name: 'Labrador Amigável', icon: '🦮' },
-  { name: 'Border Collie Gênio', icon: '🐕' },
-  { name: 'Bulldog Francês', icon: '🐶' },
-  { name: 'Boxer Saltitante', icon: '🐕' },
-  { name: 'Dálmata Pintado', icon: '🐶' },
-  { name: 'Rottweiler Corajoso', icon: '🐕' },
-  { name: 'Shih Tzu Fofinho', icon: '🐩' },
-  { name: 'Yorkshire Atrevido', icon: '🐶' },
-  { name: 'Cocker Spaniel Orelhudo', icon: '🐕' },
-  { name: 'Schnauzer Barbudinho', icon: '🐶' },
-  { name: 'Maltês Branquinho', icon: '🐩' },
-  { name: 'Pinscher Valente', icon: '🐶' },
-  { name: 'Chihuahua Raivosinho', icon: '🐕' },
-  { name: 'Akita Nobre', icon: '🐺' },
-  { name: 'Bernese das Montanhas', icon: '🐕' },
-  { name: 'Lulu da Pomerânia', icon: '🐩' },
-  { name: 'Dogue Alemão Gigante', icon: '🐕' },
-  { name: 'Samoieda Nuvem', icon: '🐺' },
-  { name: 'Basset Hound Preguiçoso', icon: '🐕' },
-  { name: 'Weimaraner Fantasma', icon: '🐕' },
-  { name: 'Vira-lata Caramelo', icon: '🐕' },
-  { name: 'Border Terrier Aventureiro', icon: '🐶' },
-  { name: 'Chow Chow Ursinho', icon: '🦁' },
-  { name: 'Pastor Belga Malinois', icon: '🐕' },
-  { name: 'Jack Russell Elétrico', icon: '🐶' },
-  { name: 'Shar Pei Enrugado', icon: '🐶' },
-  { name: 'Mastim Inglês Sossegado', icon: '🐕' },
-  { name: 'Bull Terrier Esportista', icon: '🐶' },
-  { name: 'Galgo Veloz', icon: '🐕' },
-  { name: 'Terra Nova Nadador', icon: '🐶' }
+export interface DogBreed {
+  name: string;
+  icon: string;
+  article?: 'do' | 'da';
+}
+
+export const DOG_PLACES: string[] = [
+  'O Quintal',
+  'A Varanda',
+  'O Cantinho',
+  'O Bosque',
+  'O Parque',
+  'A Trilha',
+  'A Toca',
+  'O Jardim',
+  'A Casinha',
+  'O Gramado',
+  'O Sofá',
+  'O Tapete',
+  'A Praia',
+  'O Alpendre',
+  'O Pátio',
+  'O Mirante',
+  'O Riacho',
+  'O Refúgio',
+  'A Praça',
+  'A Sombra',
+  'O Recanto',
+  'A Colina',
+  'O Pomar',
+  'O Deck',
+  'A Lagoa',
+  'A Sacada',
+  'O Chalé',
+  'A Clareira',
+  'O Esconderijo',
+  'O Terraço',
+  'O Vale',
+  'A Alameda',
+  'O Gazebo',
+  'A Enseada',
+  'O Bosquezinho',
+  'O Piquenique',
+  'A Cabana',
+  'O Mirante Ensolarado',
+  'A Prainha',
+  'O Riacho das Patinhas',
+  'O Canto da Lareira',
+  'O Bosque das Bolinhas',
+  'A Vereda',
+  'O Campo Florido',
+  'O Bosque dos Gravetos',
+  'A Brisa',
+  'A Ilha',
+  'O Labirinto',
+  'A Estalagem',
+  'O Refúgio Secreto',
+  'A Gruta',
+  'O Recanto dos Ossinhos',
+  'O Mirante das Estrelas'
+];
+
+export const DOG_BREEDS: DogBreed[] = [
+  { name: 'Golden Retriever', icon: '🐕', article: 'do' },
+  { name: 'Pug Travesso', icon: '🐶', article: 'do' },
+  { name: 'Beagle Curioso', icon: '🦮', article: 'do' },
+  { name: 'Corgi Real', icon: '🐕‍🦺', article: 'do' },
+  { name: 'Husky Siberiano', icon: '🐺', article: 'do' },
+  { name: 'Pastor Alemão Leal', icon: '🐕', article: 'do' },
+  { name: 'Poodle Elegante', icon: '🐩', article: 'da' },
+  { name: 'São Bernardo Guardião', icon: '🐶', article: 'do' },
+  { name: 'Shiba Inu Solitário', icon: '🐕', article: 'do' },
+  { name: 'Dachshund (Salsicha)', icon: '🌭', article: 'do' },
+  { name: 'Labrador Amigável', icon: '🦮', article: 'do' },
+  { name: 'Border Collie Gênio', icon: '🐕', article: 'do' },
+  { name: 'Bulldog Francês', icon: '🐶', article: 'do' },
+  { name: 'Boxer Saltitante', icon: '🐕', article: 'do' },
+  { name: 'Dálmata Pintada', icon: '🐶', article: 'da' },
+  { name: 'Rottweiler Corajoso', icon: '🐕', article: 'do' },
+  { name: 'Shih Tzu Fofinho', icon: '🐩', article: 'do' },
+  { name: 'Yorkshire Atrevido', icon: '🐶', article: 'do' },
+  { name: 'Cocker Spaniel Orelhudo', icon: '🐕', article: 'do' },
+  { name: 'Schnauzer Barbudinho', icon: '🐶', article: 'do' },
+  { name: 'Maltês Branquinho', icon: '🐩', article: 'do' },
+  { name: 'Pinscher Valente', icon: '🐶', article: 'do' },
+  { name: 'Chihuahua Raivosinho', icon: '🐕', article: 'do' },
+  { name: 'Akita Nobre', icon: '🐺', article: 'do' },
+  { name: 'Bernese das Montanhas', icon: '🐕', article: 'do' },
+  { name: 'Lulu da Pomerânia', icon: '🐩', article: 'do' },
+  { name: 'Dogue Alemão Gigante', icon: '🐕', article: 'do' },
+  { name: 'Samoieda Nuvem', icon: '🐺', article: 'do' },
+  { name: 'Basset Hound Preguiçoso', icon: '🐕', article: 'do' },
+  { name: 'Weimaraner Fantasma', icon: '🐕', article: 'do' },
+  { name: 'Vira-lata Caramelo', icon: '🐕', article: 'do' },
+  { name: 'Border Terrier Aventureiro', icon: '🐶', article: 'do' },
+  { name: 'Chow Chow Ursinho', icon: '🦁', article: 'do' },
+  { name: 'Pastor Belga Malinois', icon: '🐕', article: 'do' },
+  { name: 'Jack Russell Elétrico', icon: '🐶', article: 'do' },
+  { name: 'Shar Pei Enrugado', icon: '🐶', article: 'do' },
+  { name: 'Mastim Inglês Sossegado', icon: '🐕', article: 'do' },
+  { name: 'Bull Terrier Esportista', icon: '🐶', article: 'do' },
+  { name: 'Galgo Veloz', icon: '🐕', article: 'do' },
+  { name: 'Terra Nova Nadador', icon: '🐶', article: 'do' },
+  { name: 'Fila Brasileiro Destemido', icon: '🐕', article: 'do' },
+  { name: 'Fox Paulistinha Esperto', icon: '🐶', article: 'do' },
+  { name: 'Boiadeiro Australiano (Blue Heeler)', icon: '🐕', article: 'do' },
+  { name: 'Doberman Guardião', icon: '🐕', article: 'do' },
+  { name: 'Lhasa Apso Tranquilo', icon: '🐩', article: 'do' },
+  { name: 'Bichon Frisé Algodão', icon: '🐩', article: 'do' },
+  { name: 'Boston Terrier Cavalheiro', icon: '🐶', article: 'do' },
+  { name: 'Whippet Elegante', icon: '🐕', article: 'do' },
+  { name: 'Cane Corso Imponente', icon: '🐕', article: 'do' },
+  { name: 'Cavalier King Charles Nobre', icon: '🐶', article: 'do' },
+  { name: 'Mastim Tibetano Leão', icon: '🦁', article: 'do' },
+  { name: 'Collie das Colinas', icon: '🐕', article: 'do' },
+  { name: 'Papillon Borboleta', icon: '🦋', article: 'do' },
+  { name: 'Bloodhound Farejador Real', icon: '🐕', article: 'do' },
+  { name: 'Pequinês Imperial', icon: '🦁', article: 'do' },
+  { name: 'Basenji Silencioso', icon: '🐕', article: 'do' },
+  { name: 'Pastor de Shetland Encantado', icon: '🐕', article: 'do' },
+  { name: 'Vizsla Dourado Húngaro', icon: '🐕', article: 'do' },
+  { name: 'Bullmastiff Protetor', icon: '🐕', article: 'do' },
+  { name: 'Pastor Australiano Colorido', icon: '🐕', article: 'do' }
 ];
 
 export interface DifficultyTier {
@@ -262,7 +344,7 @@ export const CURATED_LEVELS: LevelDefinition[] = [
   {
     id: 'level-7',
     name: 'O Jardim do Poodle',
-    breed: 'Poodle Encantador',
+    breed: 'Poodle Elegante',
     breedIcon: '🐩',
     size: 8,
     difficulty: 'Mestre',
@@ -298,6 +380,25 @@ export const CURATED_LEVELS: LevelDefinition[] = [
     solution: [0, 3, 7, 2, 6, 4, 1, 5]
   }
 ];
+
+/**
+ * Gera nomes charmosos e temáticos combinando 53 lugares caninos e 60 raças de cachorro.
+ * Níveis 1 a 8 preservam seus nomes artesanais consagrados.
+ * Para níveis 9+, cruza deterministicamente 53 lugares e 60 raças (3.180 combinações sem repetição).
+ */
+export function generateLevelName(levelNumber: number): string {
+  if (levelNumber >= 1 && levelNumber <= CURATED_LEVELS.length) {
+    return CURATED_LEVELS[levelNumber - 1].name;
+  }
+  const breedIndex = (levelNumber - 1) % DOG_BREEDS.length;
+  const placeIndex = (levelNumber * 7 + 11) % DOG_PLACES.length;
+
+  const breed = DOG_BREEDS[breedIndex];
+  const place = DOG_PLACES[placeIndex];
+  const article = breed.article || 'do';
+
+  return `Nível ${levelNumber}: ${place} ${article} ${breed.name}`;
+}
 
 // Cache em memória para níveis já gerados proceduralmente
 const levelCache = new Map<number, LevelDefinition>();
@@ -505,7 +606,7 @@ export function generateLevel(levelNumber: number): LevelDefinition {
     if (check.isUnique) {
       return {
         id: `level-${levelNumber}`,
-        name: `Nível ${levelNumber}: O Recanto do ${breedInfo.name}`,
+        name: generateLevelName(levelNumber),
         breed: breedInfo.name,
         breedIcon: breedInfo.icon,
         size,
@@ -518,7 +619,14 @@ export function generateLevel(levelNumber: number): LevelDefinition {
   }
 
   // Fallback de segurança se exceder 500 tentativas (raríssimo com os buckets calibrados)
-  return CURATED_LEVELS[(levelNumber - 1) % CURATED_LEVELS.length];
+  const fallback = CURATED_LEVELS[(levelNumber - 1) % CURATED_LEVELS.length];
+  return {
+    ...fallback,
+    id: `level-${levelNumber}`,
+    name: generateLevelName(levelNumber),
+    breed: breedInfo.name,
+    breedIcon: breedInfo.icon
+  };
 }
 
 /**
