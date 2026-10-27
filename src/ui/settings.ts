@@ -482,6 +482,25 @@ export class SettingsModal {
         </div>
       </div>
 
+      <!-- Repositório GitHub / Estrela -->
+      <div class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">⭐</span>
+          <div>
+            <h4 class="text-xs font-bold text-[var(--text-main)] m-0">Gostou do Borkdoku?</h4>
+            <p class="text-[11px] text-[var(--text-muted)] m-0 mt-0.5">Dá uma estrela pro repositório no GitHub!</p>
+          </div>
+        </div>
+        <a
+          href="https://github.com/sergiohcosta/borkdoku"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="py-1.5 px-3 rounded-xl bg-[var(--accent-gold)] text-white text-xs font-extrabold shadow-sm hover:brightness-105 active:scale-95 transition-all shrink-0 cursor-pointer"
+        >
+          Dar ⭐
+        </a>
+      </div>
+
       <!-- Rodapé Institucional -->
       <div class="text-center pt-2">
         <p class="text-[11px] text-[var(--text-muted)] m-0 font-medium leading-relaxed">

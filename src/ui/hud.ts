@@ -205,7 +205,7 @@ export class HudComponent {
 
   renderBottomControls() {
     const controlsHtml = `
-      <div id="hud-controls" class="w-full mt-2 mb-1 select-none">
+      <div id="hud-controls" class="w-full mt-2 mb-1 select-none flex flex-col items-center gap-1.5">
         <!-- Dica concisa de gestos (sem botões poluindo o rodapé) -->
         <div class="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center text-xs font-semibold text-[var(--text-muted)] flex items-center justify-around">
           <span>👆 <strong>Toque:</strong> 🦴 ossinho</span>
@@ -214,6 +214,18 @@ export class HudComponent {
           <span class="opacity-30">•</span>
           <span>🖐️ <strong>Arraste:</strong> múltiplos 🦴</span>
         </div>
+
+        <!-- Convite sutil e visível ao repositório GitHub -->
+        <a
+          href="https://github.com/sergiohcosta/borkdoku"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors font-medium hover:underline cursor-pointer"
+          title="Ver o código-fonte e apoiar com uma estrela no GitHub"
+        >
+          <span>Gostou do joguinho?</span>
+          <span class="font-bold text-[var(--accent-gold)]">⭐ Dá uma estrela pro repositório</span>
+        </a>
       </div>
     `;
 
@@ -260,10 +272,21 @@ export class HudComponent {
           </div>
         </div>
 
-        <div class="w-full flex flex-col gap-2 mt-2">
+        <div class="w-full flex flex-col items-center gap-2 mt-1">
           <button id="btn-modal-next" class="w-full py-3.5 px-4 rounded-2xl bg-[var(--accent-gold)] text-white font-extrabold text-base shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer">
             Próxima Fase 🐾
           </button>
+
+          <a
+            href="https://github.com/sergiohcosta/borkdoku"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors font-semibold py-1.5 px-3.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent-gold)] active:scale-95"
+            title="Apoie o projeto no GitHub"
+          >
+            <span>Gostou do joguinho?</span>
+            <span class="font-extrabold text-[var(--accent-gold)]">⭐ Dá uma estrela no GitHub</span>
+          </a>
         </div>
 
         <p class="text-[11px] text-[var(--text-muted)] m-0 font-medium">✨ 100% livre de propagandas para você relaxar.</p>

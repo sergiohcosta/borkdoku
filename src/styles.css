@@ -70,6 +70,11 @@ body.dark-mode {
   user-select: none;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -220,6 +225,7 @@ body {
    ========================================================================== */
 
 .flex { display: flex; }
+.inline-flex { display: inline-flex; }
 .flex-col { flex-direction: column; }
 .flex-row { flex-direction: row; }
 .flex-1 { flex: 1 1 0%; }
@@ -342,7 +348,11 @@ body {
 
 .cursor-pointer { cursor: pointer; }
 .transition-transform { transition: transform 0.15s ease; }
+.transition-colors { transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease; }
 .transition-all { transition: all 0.15s ease; }
+.underline { text-decoration: underline; }
+.hover\:underline:hover { text-decoration: underline; }
+.hover\:text-\[var\(--text-main\)\]:hover { color: var(--text-main); }
 .active\:scale-95:active { transform: scale(0.95); }
 .active\:scale-98:active { transform: scale(0.98); }
 .hover\:scale-110:hover { transform: scale(1.1); }
