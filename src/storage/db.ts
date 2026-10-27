@@ -11,6 +11,7 @@ export interface CompletedLevel {
   size: number;
   durationSeconds: number;
   completedAt: string;
+  cleanClear?: boolean; // Venceu sem usar nenhuma dica (Selo Faro Puro)
 }
 
 export interface PlayerSettings {
@@ -105,15 +106,35 @@ export class GameStorage {
     }
   }
 
-  recordLevelCompletion(levelId: string, size: number, durationSeconds: number, breedName: string): PlayerStats {
+  recordLevelCompletion(
+    levelId: string,
+    size: number,
+    durationSeconds: number,
+    breedName: string,
+    cleanClear: boolean = false
+  ): PlayerStats {
     const levels = this.getCompletedLevels();
+    const existingIndex = levels.findIndex(l => l.levelId === levelId);
+    const wasAlreadyClean = existingIndex !== -1 && Boolean(levels[existingIndex].cleanClear);
+
     const newRecord: CompletedLevel = {
       levelId,
       size,
       durationSeconds,
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      cleanClear: cleanClear || wasAlreadyClean
     };
-    levels.push(newRecord);
+
+    if (existingIndex !== -1) {
+      if (durationSeconds < levels[existingIndex].durationSeconds) {
+        levels[existingIndex].durationSeconds = durationSeconds;
+      }
+      if (cleanClear) {
+        levels[existingIndex].cleanClear = true;
+      }
+    } else {
+      levels.push(newRecord);
+    }
 
     try {
       localStorage.setItem(STORAGE_KEY_LEVELS, JSON.stringify(levels));
@@ -140,6 +161,15 @@ export class GameStorage {
 
     this.saveStats(stats);
     return stats;
+  }
+
+  getCleanClearCount(): number {
+    return this.getCompletedLevels().filter(l => l.cleanClear).length;
+  }
+
+  isLevelCleanCleared(levelNumber: number): boolean {
+    const id = `level-${levelNumber}`;
+    return this.getCompletedLevels().some(l => l.levelId === id && l.cleanClear);
   }
 
   getCompletedLevelNumbers(): Set<number> {

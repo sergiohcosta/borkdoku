@@ -105,3 +105,28 @@ test('Rastreamento de fases concluídas e contagem por faixas de dificuldade', (
   assert.equal(recent.length, 2);
   assert.equal(recent[0].levelId, 'level-15');
 });
+
+test('Rastreamento do Selo Faro Puro e promoção ao rejogar sem dicas', () => {
+  const storage = GameStorage.getInstance();
+  storage.clearAll();
+
+  // Nível 1 vencido COM uso de dicas (cleanClear = false)
+  storage.recordLevelCompletion('level-1', 5, 40, 'Golden Retriever', false);
+  assert.equal(storage.getCleanClearCount(), 0);
+  assert.equal(storage.isLevelCleanCleared(1), false);
+
+  // Nível 2 vencido SEM uso de dicas (cleanClear = true)
+  storage.recordLevelCompletion('level-2', 5, 25, 'Pug Travesso', true);
+  assert.equal(storage.getCleanClearCount(), 1);
+  assert.equal(storage.isLevelCleanCleared(2), true);
+
+  // Jogador rejoga Nível 1 e desta vez vence SEM dicas!
+  storage.recordLevelCompletion('level-1', 5, 18, 'Golden Retriever', true);
+  assert.equal(storage.getCleanClearCount(), 2);
+  assert.equal(storage.isLevelCleanCleared(1), true);
+
+  // Se rejogar de novo com dicas, o selo conquistado NÃO se perde
+  storage.recordLevelCompletion('level-1', 5, 50, 'Golden Retriever', false);
+  assert.equal(storage.isLevelCleanCleared(1), true);
+  assert.equal(storage.getCleanClearCount(), 2);
+});

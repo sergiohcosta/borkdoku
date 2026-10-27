@@ -114,6 +114,38 @@ export class SoundManager {
     osc.stop(now + 0.06);
   }
 
+  // Toque de Dica / Faro (Dois tons suaves ascendentes reconfortantes: 440Hz -> 660Hz)
+  playHint() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(440, now);
+    osc1.frequency.exponentialRampToValueAtTime(554.37, now + 0.08);
+
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(659.25, now + 0.08);
+    osc2.frequency.exponentialRampToValueAtTime(880, now + 0.22);
+
+    gain.gain.setValueAtTime(0.14, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc1.start(now);
+    osc1.stop(now + 0.1);
+    osc2.start(now + 0.08);
+    osc2.stop(now + 0.25);
+  }
+
   // Conflito suave (alerta aconchegante)
   playConflict() {
     if (this.isMuted) return;

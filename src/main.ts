@@ -1,5 +1,6 @@
 import { createEmptyBoard, validateBoard, cellKey, type BoardState, type CellCoord } from './engine/rules.js';
 import { getLevelById, getNextLevel, type LevelDefinition } from './engine/levels.js';
+import { getHint } from './engine/hint.js';
 import { GameStorage } from './storage/db.js';
 import { SoundManager } from './audio/sound.js';
 import { BoardComponent } from './ui/board.js';
@@ -17,6 +18,7 @@ class BorkdokuApp {
   private board: BoardState;
   private lives: number = 3;
   private lockedCells: Set<string> = new Set<string>();
+  private usedHint: boolean = false;
 
   constructor() {
     this.storage = GameStorage.getInstance();
@@ -73,6 +75,9 @@ class BorkdokuApp {
       onReset: () => {
         this.resetLevel();
       },
+      onHint: () => {
+        this.handleHint();
+      },
       onOpenSettings: (tab) => {
         this.settingsModal.show(tab);
       },
@@ -112,6 +117,8 @@ class BorkdokuApp {
     this.storage.setCurrentLevelId(level.id); // Salva imediatamente no localStorage
     this.lives = 3; // Inicia com 3 vidas
     this.lockedCells.clear(); // Limpa as travas
+    this.usedHint = false;
+    this.hud.hideHintBanner();
     this.board = createEmptyBoard(level.size);
 
     this.hud.renderHeader(this.currentLevel, this.sound.getMuted(), this.lives, this.getDogsRemaining());
@@ -122,6 +129,9 @@ class BorkdokuApp {
   resetLevel() {
     this.lives = 3;
     this.lockedCells.clear();
+    this.usedHint = false;
+    this.hud.hideHintBanner();
+    this.boardComponent.clearHintHighlights();
     this.board = createEmptyBoard(this.currentLevel.size);
     this.hud.setLives(this.lives);
     this.hud.setDogsRemaining(this.getDogsRemaining(), this.currentLevel.size);
@@ -133,6 +143,8 @@ class BorkdokuApp {
   // 1 Clique: Coloca ou remove ossinho de apoio (ou remove cão existente)
   handleCellSingleClick(coord: CellCoord) {
     if (this.lives <= 0) return;
+
+    this.boardComponent.clearHintHighlights();
 
     const key = cellKey(coord.row, coord.col);
     if (this.lockedCells.has(key)) return; // Casa travada não aceita cliques
@@ -156,6 +168,8 @@ class BorkdokuApp {
   handleCellDoubleClick(coord: CellCoord) {
     if (this.lives <= 0) return;
 
+    this.boardComponent.clearHintHighlights();
+
     const key = cellKey(coord.row, coord.col);
     if (this.lockedCells.has(key)) return; // Casa travada não aceita cliques
 
@@ -174,6 +188,8 @@ class BorkdokuApp {
   handleCellDragPlaceBone(coord: CellCoord) {
     if (this.lives <= 0) return;
 
+    this.boardComponent.clearHintHighlights();
+
     const key = cellKey(coord.row, coord.col);
     if (this.lockedCells.has(key)) return;
 
@@ -183,6 +199,22 @@ class BorkdokuApp {
       this.board[coord.row][coord.col] = 'bone';
       this.sound.playBone();
       this.updateBoardAndValidate();
+    }
+  }
+
+  // Aciona o sistema de dicas caninas (Farejar Erro -> Patinha Guia)
+  private handleHint() {
+    if (this.lives <= 0) return;
+
+    this.usedHint = true;
+    this.sound.playHint();
+
+    const hint = getHint(this.board, this.currentLevel);
+    const isError = hint.type === 'error-bone' || hint.type === 'error-conflict';
+    this.hud.showHintBanner(hint.message, isError);
+
+    if (hint.coord) {
+      this.boardComponent.highlightHintCell(hint.coord, isError ? 'error' : 'guide');
     }
   }
 
@@ -235,17 +267,19 @@ class BorkdokuApp {
       const timeSpent = this.hud.stopTimer();
       this.sound.playVictory();
 
-      // Salvar vitória e progresso
+      // Salvar vitória e registrar se foi Faro Puro (sem nenhuma dica)
+      const isCleanClear = !this.usedHint;
       this.storage.recordLevelCompletion(
         this.currentLevel.id,
         this.currentLevel.size,
         timeSpent,
-        this.currentLevel.breed
+        this.currentLevel.breed,
+        isCleanClear
       );
 
-      // Exibir modal de vitória limpo
+      // Exibir modal de vitória com selo correspondente
       setTimeout(() => {
-        this.hud.showVictoryModal(this.currentLevel, timeSpent);
+        this.hud.showVictoryModal(this.currentLevel, timeSpent, isCleanClear);
       }, 400);
     }
   }

@@ -72,6 +72,27 @@ export class BoardComponent {
     }
   }
 
+  highlightHintCell(coord: CellCoord, type: 'error' | 'guide') {
+    const key = `cell-${coord.row}-${coord.col}`;
+    const el = document.getElementById(key);
+    if (!el) return;
+
+    this.clearHintHighlights();
+
+    const className = type === 'error' ? 'cell-hint-error' : 'cell-hint-guide';
+    el.classList.add(className);
+
+    setTimeout(() => {
+      el.classList.remove(className);
+    }, 3500);
+  }
+
+  clearHintHighlights() {
+    this.container.querySelectorAll('.cell-hint-guide, .cell-hint-error').forEach(c => {
+      c.classList.remove('cell-hint-guide', 'cell-hint-error');
+    });
+  }
+
   private handlePointerMove = (e: PointerEvent) => {
     if (!this.isPointerDown || !this.dragStartCoord) return;
 

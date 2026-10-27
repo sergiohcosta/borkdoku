@@ -149,9 +149,16 @@ export class SettingsModal {
             <span class="text-xs font-bold text-[var(--text-main)] block">Salto Rápido de Fase</span>
             <span class="text-[11px] text-[var(--text-muted)] block">Digite qualquer nível (1 a 1000+)</span>
           </div>
-          <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--accent-gold)]">
-            Fase ${currentNum} (${currentTier.name})
-          </span>
+          <div class="flex items-center gap-1.5">
+            ${storage.getCleanClearCount() > 0 ? `
+              <span class="text-xs font-black px-2 py-1 rounded-xl bg-amber-500/10 border border-[var(--accent-gold)] text-[var(--accent-gold)] flex items-center gap-1" title="Fases resolvidas com Faro Puro (sem dicas)">
+                ✨ ${storage.getCleanClearCount()}
+              </span>
+            ` : ''}
+            <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--accent-gold)]">
+              Fase ${currentNum} (${currentTier.name})
+            </span>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -354,8 +361,18 @@ export class SettingsModal {
     const recentLevels = storage.getRecentCompletedLevels(8);
 
     container.innerHTML = `
-      <!-- Destaques 2x2 -->
+      <!-- Destaques 2x2 + Faro Puro -->
       <div class="grid grid-cols-2 gap-2">
+        <div class="col-span-2 bg-gradient-to-r from-amber-500/10 to-transparent p-3 rounded-2xl border border-[var(--accent-gold)] flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="text-3xl">✨</span>
+            <div>
+              <span class="text-xs font-black text-[var(--accent-gold)] block">SELO FARO PURO</span>
+              <span class="text-[11px] text-[var(--text-muted)] font-medium">Fases vencidas sem usar nenhuma dica</span>
+            </div>
+          </div>
+          <span class="text-xl font-black text-[var(--accent-gold)] font-mono">${storage.getCleanClearCount()} 🐾</span>
+        </div>
         <div class="bg-[var(--bg-card)] p-3 rounded-2xl border border-[var(--border-color)] text-center">
           <span class="text-xs text-[var(--text-muted)] font-semibold block">Fases Únicas Vencidas</span>
           <span class="text-xl font-black text-[var(--accent-gold)] block mt-0.5">${completedSet.size}</span>
@@ -412,6 +429,7 @@ export class SettingsModal {
                   <span class="text-emerald-600 font-bold">✓</span>
                   <span class="font-bold text-[var(--text-main)]">${item.levelId.replace('level-', 'Fase ')}</span>
                   <span class="text-[10px] text-[var(--text-muted)] font-medium">(${item.size}x${item.size})</span>
+                  ${item.cleanClear ? '<span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500/15 border border-[var(--accent-gold)] text-[var(--accent-gold)]" title="Vitória sem dicas!">✨ Faro Puro</span>' : ''}
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="font-mono text-[11px] font-bold text-[var(--text-muted)]">${formatTime(item.durationSeconds)}</span>

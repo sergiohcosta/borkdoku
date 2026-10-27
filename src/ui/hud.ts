@@ -3,6 +3,7 @@ import { type LevelDefinition } from '../engine/levels.js';
 export interface HudCallbacks {
   onToggleSound: () => void;
   onReset: () => void;
+  onHint: () => void;
   onOpenSettings: (tab?: 'levels' | 'collection' | 'achievements' | 'settings') => void;
   onNextLevel: () => void;
 }
@@ -15,6 +16,7 @@ export class HudComponent {
   private lives: number = 3;
   private dogsRemaining: number = 0;
   private totalDogs: number = 0;
+  private hintTimeout: number | null = null;
 
   constructor(container: HTMLElement, callbacks: HudCallbacks) {
     this.container = container;
@@ -102,6 +104,9 @@ export class HudComponent {
             <button id="btn-levels" class="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm active:scale-95 transition-transform cursor-pointer" aria-label="Níveis e Coleção" title="Níveis e Coleção">
               🐾
             </button>
+            <button id="btn-hint" class="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm active:scale-95 transition-transform cursor-pointer hover:border-[var(--accent-gold)]" aria-label="Dica Canina" title="Farejar Dica (Sem Anúncios)">
+              💡
+            </button>
             <button id="btn-sound" class="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm active:scale-95 transition-transform cursor-pointer" aria-label="Som">
               ${isMuted ? '🔇' : '🔊'}
             </button>
@@ -168,6 +173,13 @@ export class HudComponent {
             </div>
           </div>
         </div>
+
+        <!-- Banner de Dica / Faro Dinâmico -->
+        <div id="hud-hint-banner" class="hidden w-full p-2.5 px-3 rounded-2xl border text-xs font-bold items-center gap-2 shadow-sm transition-all mt-1">
+          <span id="hint-icon" class="text-base leading-none"></span>
+          <span id="hint-text" class="flex-1 leading-snug text-[var(--text-main)]"></span>
+          <button id="btn-close-hint" class="text-[var(--text-muted)] hover:text-[var(--text-main)] p-1 text-xs cursor-pointer font-bold leading-none select-none">✕</button>
+        </div>
       </header>
     `;
 
@@ -180,9 +192,11 @@ export class HudComponent {
 
     document.getElementById('btn-levels')?.addEventListener('click', () => this.callbacks.onOpenSettings('levels'));
     document.getElementById('btn-header-level')?.addEventListener('click', () => this.callbacks.onOpenSettings('levels'));
+    document.getElementById('btn-hint')?.addEventListener('click', this.callbacks.onHint);
     document.getElementById('btn-sound')?.addEventListener('click', this.callbacks.onToggleSound);
     document.getElementById('btn-reset')?.addEventListener('click', this.callbacks.onReset);
     document.getElementById('btn-settings')?.addEventListener('click', () => this.callbacks.onOpenSettings('settings'));
+    document.getElementById('btn-close-hint')?.addEventListener('click', () => this.hideHintBanner());
 
     // Evento de abrir/fechar as regras colapsáveis
     document.getElementById('btn-toggle-rules')?.addEventListener('click', () => {
@@ -237,7 +251,45 @@ export class HudComponent {
     }
   }
 
-  showVictoryModal(level: LevelDefinition, timeSeconds: number) {
+  showHintBanner(message: string, isError: boolean = false) {
+    const banner = document.getElementById('hud-hint-banner');
+    const icon = document.getElementById('hint-icon');
+    const text = document.getElementById('hint-text');
+    if (!banner || !icon || !text) return;
+
+    if (this.hintTimeout !== null) {
+      window.clearTimeout(this.hintTimeout);
+    }
+
+    icon.textContent = isError ? '👃' : '🐾';
+    text.textContent = message;
+
+    banner.className = `w-full p-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center gap-2 shadow-sm transition-all mt-1 animate-fade-in ${
+      isError
+        ? 'bg-red-500/10 border-[var(--accent-red)] text-red-600 dark:text-red-400'
+        : 'bg-amber-500/10 border-[var(--accent-gold)] text-[var(--text-main)]'
+    }`;
+
+    banner.classList.remove('hidden');
+
+    this.hintTimeout = window.setTimeout(() => {
+      this.hideHintBanner();
+    }, 6500);
+  }
+
+  hideHintBanner() {
+    const banner = document.getElementById('hud-hint-banner');
+    if (banner) {
+      banner.classList.add('hidden');
+      banner.classList.remove('flex');
+    }
+    if (this.hintTimeout !== null) {
+      window.clearTimeout(this.hintTimeout);
+      this.hintTimeout = null;
+    }
+  }
+
+  showVictoryModal(level: LevelDefinition, timeSeconds: number, isCleanClear: boolean = false) {
     const mins = Math.floor(timeSeconds / 60);
     const secs = timeSeconds % 60;
     const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -256,6 +308,20 @@ export class HudComponent {
           <h2 class="text-2xl font-black m-0 text-[var(--accent-gold)]">Au au! Vitória!</h2>
           <p class="text-sm text-[var(--text-muted)] mt-1 mb-0">Você acomodou todos os cachorrinhos sem nenhum conflito!</p>
         </div>
+
+        <!-- Selo Faro Puro vs Vitória com Ajuda -->
+        ${isCleanClear ? `
+          <div class="w-full py-2 px-3 rounded-2xl bg-amber-500/15 border-2 border-[var(--accent-gold)] flex items-center justify-center gap-1.5 text-xs font-black text-[var(--accent-gold)] shadow-sm animate-pulse">
+            <span>✨</span>
+            <span>Selo Faro Puro: 100% Sem Dicas!</span>
+            <span>🐾</span>
+          </div>
+        ` : `
+          <div class="w-full py-1.5 px-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center gap-1.5 text-xs font-bold text-[var(--text-muted)]">
+            <span>🐾</span>
+            <span>Fase Concluída com Ajuda do Faro</span>
+          </div>
+        `}
 
         <div id="btn-victory-collection" class="bg-[var(--bg-card)] rounded-2xl p-3 w-full flex items-center justify-around border border-[var(--border-color)] cursor-pointer hover:border-[var(--accent-gold)] transition-colors" title="Ver no Álbum de Cães">
           <div>
