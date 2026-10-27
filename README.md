@@ -11,7 +11,7 @@
 
 ## 🐕 Sobre o Borkdoku
 
-O **Borkdoku** nasceu de uma dor real: jogos mobile relaxantes de quebra-cabeça (como o *Meowdoku* e puzzles no estilo *Queens* / *Star Battle*) são divertidos e estimulantes, mas frequentemente arruinados por monetização predatória — vídeos em tela cheia forçados a cada vitória, sons estridentes e exigência de internet para jogar.
+O **Borkdoku** nasceu de uma dor real: jogos mobile relaxantes de quebra-cabeça (puzzles no estilo *Queens* / *Star Battle*) são divertidos e estimulantes, mas frequentemente arruinados por monetização predatória — vídeos em tela cheia forçados a cada vitória, sons estridentes e exigência de internet para jogar.
 
 O **Borkdoku** resgata a experiência pura e acolhedora:
 - 🚫 **Zero Anúncios:** Nenhuma propaganda, banner ou vídeo forçado. Nunca.
@@ -42,15 +42,7 @@ O objetivo é colocar exatamente um cachorrinho em cada linha, coluna e região 
 
 ## 🏆 Raças Colecionáveis
 
-A cada marco de fases concluídas, você desbloqueia uma nova raça canina no seu álbum:
-- 🐕 **Golden Retriever** (Fase 1)
-- 🐶 **Pug Travesso** (Fase 2)
-- 🦮 **Beagle Curioso** (Fase 3)
-- 🐕‍🦺 **Corgi Real** (Fase 4)
-- 🐺 **Husky Siberiano** (Fase 5)
-- 🐕 **Pastor Alemão** (Fase 6)
-- 🐩 **Poodle Encantador** (Fase 7)
-- 🐶 **São Bernardo Guardião** (Fase 8)
+A cada marco de fases concluídas, você desbloqueia uma nova raça canina no seu álbum
 
 ---
 
@@ -95,7 +87,7 @@ npm run build
 
 ---
 
-## 🐳 Deploy com Docker & Kubernetes (K3s)
+## 🐳 Deploy com Docker
 
 ### Rodando via Docker
 ```bash
@@ -105,14 +97,6 @@ docker build -t borkdoku:1.0.0 .
 # Executar na porta 8080
 docker run -d -p 8080:80 --name borkdoku borkdoku:1.0.0
 ```
-
-### Deploy no K3s Homelab
-```bash
-kubectl apply -f k8s/
-```
-Os manifestos configuram um `Deployment` com probes de saúde (`readiness` e `liveness`) consumindo menos de 20MB de RAM, e um `Service` do tipo ClusterIP.
-
----
 
 ## 📄 Licença
 
