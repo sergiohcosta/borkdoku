@@ -19,6 +19,7 @@ export interface PlayerSettings {
   hapticsEnabled: boolean;
   theme: 'light' | 'dark';
   inputMode: 'toggle' | 'dog-only' | 'bone-only';
+  telemetryEnabled: boolean;
 }
 
 export interface BackupData {
@@ -48,11 +49,13 @@ const DEFAULT_SETTINGS: PlayerSettings = {
   soundEnabled: true,
   hapticsEnabled: true,
   theme: 'light',
-  inputMode: 'toggle'
+  inputMode: 'toggle',
+  telemetryEnabled: true
 };
 
 export class GameStorage {
   private static instance: GameStorage;
+  private inMemoryStore = new Map<string, string>();
 
   static getInstance(): GameStorage {
     if (!this.instance) {
@@ -61,49 +64,62 @@ export class GameStorage {
     return this.instance;
   }
 
-  // --- LEVEL ATIVO ---
-  getCurrentLevelId(): string {
+  private getItem(key: string): string | null {
     try {
-      return localStorage.getItem(STORAGE_KEY_CURRENT_LEVEL) || 'level-1';
+      if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+      return this.inMemoryStore.get(key) || null;
     } catch {
-      return 'level-1';
+      return this.inMemoryStore.get(key) || null;
     }
   }
 
-  setCurrentLevelId(levelId: string): void {
+  private setItem(key: string, val: string): void {
     try {
-      localStorage.setItem(STORAGE_KEY_CURRENT_LEVEL, levelId);
-    } catch (e) {
-      console.warn('Erro ao salvar nível atual:', e);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, val);
+      }
+      this.inMemoryStore.set(key, val);
+    } catch {
+      this.inMemoryStore.set(key, val);
     }
+  }
+
+  private removeItem(key: string): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+      this.inMemoryStore.delete(key);
+    } catch {
+      this.inMemoryStore.delete(key);
+    }
+  }
+
+  // --- LEVEL ATIVO ---
+  getCurrentLevelId(): string {
+    return this.getItem(STORAGE_KEY_CURRENT_LEVEL) || 'level-1';
+  }
+
+  setCurrentLevelId(levelId: string): void {
+    this.setItem(STORAGE_KEY_CURRENT_LEVEL, levelId);
   }
 
   // --- STATS ---
   getStats(): PlayerStats {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY_STATS);
-      return data ? JSON.parse(data) : { ...DEFAULT_STATS };
-    } catch {
-      return { ...DEFAULT_STATS };
-    }
+    const data = this.getItem(STORAGE_KEY_STATS);
+    return data ? JSON.parse(data) : { ...DEFAULT_STATS };
   }
 
   saveStats(stats: PlayerStats): void {
-    try {
-      localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
-    } catch (e) {
-      console.warn('Erro ao salvar stats no localStorage:', e);
-    }
+    this.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
   }
 
   // --- LEVELS ---
   getCompletedLevels(): CompletedLevel[] {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY_LEVELS);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    const data = this.getItem(STORAGE_KEY_LEVELS);
+    return data ? JSON.parse(data) : [];
   }
 
   recordLevelCompletion(
@@ -136,11 +152,7 @@ export class GameStorage {
       levels.push(newRecord);
     }
 
-    try {
-      localStorage.setItem(STORAGE_KEY_LEVELS, JSON.stringify(levels));
-    } catch (e) {
-      console.warn('Erro ao salvar levels:', e);
-    }
+    this.setItem(STORAGE_KEY_LEVELS, JSON.stringify(levels));
 
     // Atualizar raças desbloqueadas
     this.unlockBreed(breedName);
@@ -220,16 +232,12 @@ export class GameStorage {
 
   // --- BREEDS ---
   getUnlockedBreeds(): string[] {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY_BREEDS);
-      const list = data ? JSON.parse(data) : [];
-      if (!list.includes('Golden Retriever')) {
-        list.push('Golden Retriever'); // Raça inicial padrão
-      }
-      return list;
-    } catch {
-      return ['Golden Retriever'];
+    const data = this.getItem(STORAGE_KEY_BREEDS);
+    const list = data ? JSON.parse(data) : [];
+    if (!list.includes('Golden Retriever')) {
+      list.push('Golden Retriever'); // Raça inicial padrão
     }
+    return list;
   }
 
   unlockBreed(breed: string): void {
@@ -237,32 +245,20 @@ export class GameStorage {
     const breeds = this.getUnlockedBreeds();
     if (!breeds.includes(breed)) {
       breeds.push(breed);
-      try {
-        localStorage.setItem(STORAGE_KEY_BREEDS, JSON.stringify(breeds));
-      } catch (e) {
-        console.warn('Erro ao salvar raça:', e);
-      }
+      this.setItem(STORAGE_KEY_BREEDS, JSON.stringify(breeds));
     }
   }
 
   // --- SETTINGS ---
   getSettings(): PlayerSettings {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY_SETTINGS);
-      return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : { ...DEFAULT_SETTINGS };
-    } catch {
-      return { ...DEFAULT_SETTINGS };
-    }
+    const data = this.getItem(STORAGE_KEY_SETTINGS);
+    return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : { ...DEFAULT_SETTINGS };
   }
 
   saveSettings(settings: Partial<PlayerSettings>): PlayerSettings {
     const current = this.getSettings();
     const updated = { ...current, ...settings };
-    try {
-      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(updated));
-    } catch (e) {
-      console.warn('Erro ao salvar settings:', e);
-    }
+    this.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(updated));
     return updated;
   }
 
@@ -304,8 +300,8 @@ export class GameStorage {
       }
 
       this.saveStats(data.stats);
-      localStorage.setItem(STORAGE_KEY_LEVELS, JSON.stringify(data.completedLevels));
-      localStorage.setItem(STORAGE_KEY_BREEDS, JSON.stringify(data.unlockedBreeds || ['Golden Retriever']));
+      this.setItem(STORAGE_KEY_LEVELS, JSON.stringify(data.completedLevels));
+      this.setItem(STORAGE_KEY_BREEDS, JSON.stringify(data.unlockedBreeds || ['Golden Retriever']));
       if (data.settings) {
         this.saveSettings(data.settings);
       }
@@ -320,10 +316,10 @@ export class GameStorage {
   }
 
   clearAll(): void {
-    localStorage.removeItem(STORAGE_KEY_STATS);
-    localStorage.removeItem(STORAGE_KEY_LEVELS);
-    localStorage.removeItem(STORAGE_KEY_BREEDS);
-    localStorage.removeItem(STORAGE_KEY_SETTINGS);
-    localStorage.removeItem(STORAGE_KEY_CURRENT_LEVEL);
+    this.removeItem(STORAGE_KEY_STATS);
+    this.removeItem(STORAGE_KEY_LEVELS);
+    this.removeItem(STORAGE_KEY_BREEDS);
+    this.removeItem(STORAGE_KEY_SETTINGS);
+    this.removeItem(STORAGE_KEY_CURRENT_LEVEL);
   }
 }

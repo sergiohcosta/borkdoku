@@ -1,4 +1,5 @@
 import { type LevelDefinition } from '../engine/levels.js';
+import { TelemetryService } from '../engine/telemetry.js';
 
 export interface HudCallbacks {
   onToggleSound: () => void;
@@ -208,6 +209,7 @@ export class HudComponent {
           content.classList.remove('hidden');
           content.classList.add('flex');
           if (arrow) arrow.textContent = '▴';
+          TelemetryService.getInstance().recordFeature('rules_opened', String(level.id));
         } else {
           content.classList.add('hidden');
           content.classList.remove('flex');
@@ -231,6 +233,7 @@ export class HudComponent {
 
         <!-- Convite sutil e visível ao repositório GitHub -->
         <a
+          id="link-github-footer"
           href="https://github.com/sergiohcosta/borkdoku"
           target="_blank"
           rel="noopener noreferrer"
@@ -249,6 +252,10 @@ export class HudComponent {
     } else {
       this.container.insertAdjacentHTML('beforeend', controlsHtml);
     }
+
+    document.getElementById('link-github-footer')?.addEventListener('click', () => {
+      TelemetryService.getInstance().recordFeature('github_star_clicked', 'footer');
+    });
   }
 
   showHintBanner(message: string, isError: boolean = false) {
@@ -344,6 +351,7 @@ export class HudComponent {
           </button>
 
           <a
+            id="link-github-victory"
             href="https://github.com/sergiohcosta/borkdoku"
             target="_blank"
             rel="noopener noreferrer"
@@ -360,6 +368,10 @@ export class HudComponent {
     `;
 
     document.body.appendChild(modal);
+
+    document.getElementById('link-github-victory')?.addEventListener('click', () => {
+      TelemetryService.getInstance().recordFeature('github_star_clicked', 'victory_modal');
+    });
 
     document.getElementById('btn-modal-next')?.addEventListener('click', () => {
       modal.remove();

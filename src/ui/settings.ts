@@ -1,5 +1,6 @@
 import { GameStorage } from '../storage/db.js';
 import { DOG_BREEDS, DIFFICULTY_TIERS, getTierForLevel } from '../engine/levels.js';
+import { TelemetryService } from '../engine/telemetry.js';
 
 export interface SettingsCallbacks {
   onThemeChanged: (theme: 'light' | 'dark') => void;
@@ -261,6 +262,7 @@ export class SettingsModal {
   // ABA 2: ÁLBUM DE CACHORRINHOS DESCOBERTOS
   // ==========================================
   private renderCollectionTab(container: HTMLElement) {
+    TelemetryService.getInstance().recordFeature('album_opened');
     const storage = GameStorage.getInstance();
     const unlockedBreeds = storage.getUnlockedBreeds();
     const totalBreeds = DOG_BREEDS.length;
@@ -500,6 +502,26 @@ export class SettingsModal {
         </div>
       </div>
 
+      <!-- Privacidade & Telemetria Anônima -->
+      <div class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col gap-2.5">
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl">🔒</span>
+          <div>
+            <h4 class="text-xs font-bold text-[var(--text-main)] m-0">Privacidade & Telemetria Anônima</h4>
+            <p class="text-[11px] text-[var(--text-muted)] m-0 mt-0.5 leading-relaxed">
+              Coletamos <strong>exclusivamente dados anônimos de jogabilidade</strong> (como tempo da fase, vitórias e uso de dicas) para calibrar a dificuldade do jogo. Nenhum dado pessoal, IP ou identificador é registrado. Zero cookies, zero anúncios.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1 border-t border-[var(--border-color)]">
+          <span class="text-xs font-semibold text-[var(--text-main)]">Ajudar no balanceamento das fases</span>
+          <button id="btn-toggle-telemetry" class="px-3 py-1.5 rounded-xl text-xs font-bold ${settings.telemetryEnabled ? 'bg-[var(--accent-gold)] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-muted)]'} shadow-sm cursor-pointer transition-all">
+            ${settings.telemetryEnabled ? '✓ Ativado' : '✕ Desativado'}
+          </button>
+        </div>
+      </div>
+
       <!-- Repositório GitHub / Estrela -->
       <div class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2">
         <div class="flex items-center gap-2.5">
@@ -510,6 +532,7 @@ export class SettingsModal {
           </div>
         </div>
         <a
+          id="link-github-settings"
           href="https://github.com/sergiohcosta/borkdoku"
           target="_blank"
           rel="noopener noreferrer"
@@ -522,7 +545,7 @@ export class SettingsModal {
       <!-- Rodapé Institucional -->
       <div class="text-center pt-2">
         <p class="text-[11px] text-[var(--text-muted)] m-0 font-medium leading-relaxed">
-          Borkdoku v1.1.0 • 100% Offline • Sem Rastreamento<br />
+          Borkdoku v1.2.0 • 100% Offline • Sem Rastreamento Pessoal<br />
           Feito com carinho para amantes de quebra-cabeças caninos 🐶
         </p>
       </div>
@@ -536,7 +559,18 @@ export class SettingsModal {
       this.renderSettingsTab(container);
     });
 
+    document.getElementById('btn-toggle-telemetry')?.addEventListener('click', () => {
+      const current = storage.getSettings().telemetryEnabled;
+      storage.saveSettings({ telemetryEnabled: !current });
+      this.renderSettingsTab(container);
+    });
+
+    document.getElementById('link-github-settings')?.addEventListener('click', () => {
+      TelemetryService.getInstance().recordFeature('github_star_clicked', 'settings_tab');
+    });
+
     document.getElementById('btn-export-backup')?.addEventListener('click', () => {
+      TelemetryService.getInstance().recordFeature('backup_exported');
       storage.downloadBackupFile();
     });
 
@@ -553,6 +587,7 @@ export class SettingsModal {
         const res = storage.restoreBackup(text);
         alert(res.message);
         if (res.success) {
+          TelemetryService.getInstance().recordFeature('backup_imported');
           this.close();
           this.callbacks.onDataRestored();
         }

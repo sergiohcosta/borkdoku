@@ -1,6 +1,7 @@
 import { createEmptyBoard, validateBoard, cellKey, type BoardState, type CellCoord } from './engine/rules.js';
 import { getLevelById, getNextLevel, type LevelDefinition } from './engine/levels.js';
 import { getHint } from './engine/hint.js';
+import { TelemetryService, type ViolationType } from './engine/telemetry.js';
 import { GameStorage } from './storage/db.js';
 import { SoundManager } from './audio/sound.js';
 import { BoardComponent } from './ui/board.js';
@@ -34,6 +35,14 @@ class BorkdokuApp {
     this.initUI();
     this.startLevel(this.currentLevel);
     this.registerServiceWorker();
+
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    TelemetryService.getInstance().recordEnvironment(this.storage.getSettings().theme, isMobile);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => {
+        TelemetryService.getInstance().recordAbandon();
+      });
+    }
   }
 
   private applyTheme() {
@@ -121,6 +130,10 @@ class BorkdokuApp {
     this.hud.hideHintBanner();
     this.board = createEmptyBoard(level.size);
 
+    const match = level.id.match(/\d+/);
+    const num = match ? parseInt(match[0], 10) : 1;
+    TelemetryService.getInstance().startLevel(num, level.size, level.difficulty);
+
     this.hud.renderHeader(this.currentLevel, this.sound.getMuted(), this.lives, this.getDogsRemaining());
     this.hud.startTimer();
     this.updateBoardAndValidate();
@@ -133,6 +146,7 @@ class BorkdokuApp {
     this.hud.hideHintBanner();
     this.boardComponent.clearHintHighlights();
     this.board = createEmptyBoard(this.currentLevel.size);
+    TelemetryService.getInstance().recordRestart();
     this.hud.setLives(this.lives);
     this.hud.setDogsRemaining(this.getDogsRemaining(), this.currentLevel.size);
     this.hud.startTimer();
@@ -198,6 +212,7 @@ class BorkdokuApp {
     if (current === 'empty') {
       this.board[coord.row][coord.col] = 'bone';
       this.sound.playBone();
+      TelemetryService.getInstance().recordDragBone();
       this.updateBoardAndValidate();
     }
   }
@@ -210,12 +225,49 @@ class BorkdokuApp {
     this.sound.playHint();
 
     const hint = getHint(this.board, this.currentLevel);
+    TelemetryService.getInstance().recordHint(hint.type);
     const isError = hint.type === 'error-bone' || hint.type === 'error-conflict';
     this.hud.showHintBanner(hint.message, isError);
 
     if (hint.coord) {
       this.boardComponent.highlightHintCell(hint.coord, isError ? 'error' : 'guide');
     }
+  }
+
+  // Diagnóstico do tipo de violação de regra para telemetria de game design
+  private detectViolationType(coord: CellCoord): ViolationType {
+    const deltas = [-1, 1];
+    for (const dr of deltas) {
+      for (const dc of deltas) {
+        const nr = coord.row + dr;
+        const nc = coord.col + dc;
+        if (nr >= 0 && nr < this.currentLevel.size && nc >= 0 && nc < this.currentLevel.size) {
+          if (this.board[nr][nc] === 'dog') {
+            return 'diagonal';
+          }
+        }
+      }
+    }
+
+    if (this.board[coord.row].includes('dog')) {
+      return 'row-col';
+    }
+    for (let r = 0; r < this.currentLevel.size; r++) {
+      if (this.board[r][coord.col] === 'dog') {
+        return 'row-col';
+      }
+    }
+
+    const reg = this.currentLevel.regions[coord.row][coord.col];
+    for (let r = 0; r < this.currentLevel.size; r++) {
+      for (let c = 0; c < this.currentLevel.size; c++) {
+        if (this.currentLevel.regions[r][c] === reg && this.board[r][c] === 'dog') {
+          return 'region';
+        }
+      }
+    }
+
+    return 'wrong-spot';
   }
 
   // Tentativa de posicionamento com validação estrita, sistema de 3 vidas e trava de ossinho
@@ -228,6 +280,7 @@ class BorkdokuApp {
 
     // Se estiver errado: perde 1 vida e trava a casa como ossinho!
     if (!isCorrect) {
+      const violation = this.detectViolationType(coord);
       this.lives = Math.max(0, this.lives - 1);
       this.hud.setLives(this.lives);
       this.sound.playConflict();
@@ -241,6 +294,7 @@ class BorkdokuApp {
       // Se perdeu todas as vidas: Game Over!
       if (this.lives <= 0) {
         this.hud.stopTimer();
+        TelemetryService.getInstance().recordGameOver(violation);
         setTimeout(() => {
           this.hud.showGameOverModal(() => {
             this.resetLevel();
@@ -253,6 +307,7 @@ class BorkdokuApp {
     // Se estiver correto: posiciona o cachorrinho com sucesso!
     this.board[coord.row][coord.col] = 'dog';
     this.sound.playDog();
+    TelemetryService.getInstance().recordFirstDogPlaced();
     this.updateBoardAndValidate();
   }
 
@@ -269,6 +324,7 @@ class BorkdokuApp {
 
       // Salvar vitória e registrar se foi Faro Puro (sem nenhuma dica)
       const isCleanClear = !this.usedHint;
+      TelemetryService.getInstance().recordWin(timeSpent, isCleanClear, this.lives);
       this.storage.recordLevelCompletion(
         this.currentLevel.id,
         this.currentLevel.size,

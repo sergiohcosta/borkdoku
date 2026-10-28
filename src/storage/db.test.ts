@@ -60,6 +60,23 @@ test('Restauração rejeita arquivo corrompido ou com versão errada', () => {
   assert.equal(res.success, false);
 });
 
+test('Configurações do jogador e toggle de telemetria anônima', () => {
+  const storage = GameStorage.getInstance();
+  storage.clearAll();
+
+  // Padrão: telemetria ativa
+  const defaults = storage.getSettings();
+  assert.equal(defaults.telemetryEnabled, true);
+
+  // Desativar telemetria
+  storage.saveSettings({ telemetryEnabled: false });
+  assert.equal(storage.getSettings().telemetryEnabled, false);
+
+  // Reativar telemetria
+  storage.saveSettings({ telemetryEnabled: true });
+  assert.equal(storage.getSettings().telemetryEnabled, true);
+});
+
 test('Persistência do nível atual do jogador', () => {
   const storage = GameStorage.getInstance();
   storage.clearAll();
