@@ -6,6 +6,7 @@ export interface SettingsCallbacks {
   onThemeChanged: (theme: 'light' | 'dark') => void;
   onDataRestored: () => void;
   onLevelSelected?: (levelId: string) => void;
+  onInstallPWA?: () => Promise<'accepted' | 'dismissed' | 'manual-help'>;
 }
 
 export type HubTab = 'levels' | 'collection' | 'achievements' | 'settings';
@@ -522,6 +523,23 @@ export class SettingsModal {
         </div>
       </div>
 
+      <!-- Instalar como Aplicativo PWA -->
+      <div id="card-pwa-install" class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">📲</span>
+          <div>
+            <h4 class="text-xs font-bold text-[var(--text-main)] m-0">Instalar como Aplicativo</h4>
+            <p class="text-[11px] text-[var(--text-muted)] m-0 mt-0.5">Jogue em tela cheia na sua tela inicial, 100% offline.</p>
+          </div>
+        </div>
+        <button
+          id="btn-pwa-install"
+          class="py-1.5 px-3 rounded-xl bg-[var(--accent-gold)] text-white text-xs font-extrabold shadow-sm hover:brightness-105 active:scale-95 transition-all shrink-0 cursor-pointer"
+        >
+          Instalar 🐾
+        </button>
+      </div>
+
       <!-- Repositório GitHub / Estrela -->
       <div class="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2">
         <div class="flex items-center gap-2.5">
@@ -550,6 +568,18 @@ export class SettingsModal {
         </p>
       </div>
     `;
+
+    document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
+      const res = await this.callbacks.onInstallPWA?.();
+      if (res === 'manual-help' || res === 'dismissed') {
+        const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          alert('No Safari do iPhone/iPad:\nToque no botão Compartilhar (quadrado com seta) e selecione "Adicionar à Tela de Início". 📲🐶');
+        } else {
+          alert('No Chrome:\nToque nos três pontinhos (⋮) no topo direito e selecione "Instalar aplicativo" ou "Adicionar à tela inicial". 📲🐶');
+        }
+      }
+    });
 
     document.getElementById('btn-toggle-theme')?.addEventListener('click', () => {
       const current = storage.getSettings().theme;

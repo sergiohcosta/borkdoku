@@ -115,7 +115,8 @@ class BorkdokuApp {
       onLevelSelected: (levelId) => {
         const lvl = getLevelById(levelId);
         this.startLevel(lvl);
-      }
+      },
+      onInstallPWA: () => promptPWAInstall()
     });
 
     this.hud.renderBottomControls();
@@ -343,12 +344,45 @@ class BorkdokuApp {
   private registerServiceWorker() {
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => {
-          console.log('ServiceWorker registration optional:', err);
+        const swUrl = new URL('./sw.js', window.location.href).href;
+        navigator.serviceWorker.register(swUrl).then((reg) => {
+          console.log('Borkdoku PWA ServiceWorker ativo no escopo:', reg.scope);
+        }).catch(err => {
+          console.warn('ServiceWorker registration error:', err);
         });
       });
     }
   }
+}
+
+// Suporte nativo à instalação PWA
+let deferredInstallPrompt: any = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    TelemetryService.getInstance().recordFeature('pwa_install_available');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    TelemetryService.getInstance().recordFeature('pwa_installed');
+  });
+}
+
+export function isPWAInstallAvailable(): boolean {
+  return deferredInstallPrompt !== null;
+}
+
+export async function promptPWAInstall(): Promise<'accepted' | 'dismissed' | 'manual-help'> {
+  if (!deferredInstallPrompt) {
+    return 'manual-help';
+  }
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  return outcome;
 }
 
 // Inicializar quando o DOM estiver pronto
